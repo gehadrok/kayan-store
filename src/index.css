@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-ar: 'Cairo', system-ui, -apple-system, sans-serif;
+    --font-en: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  [dir="rtl"] {
+    font-family: var(--font-ar);
+  }
+
+  [dir="ltr"] {
+    font-family: var(--font-en);
+  }
+
+  body {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Glass & Glow utilities */
+.kayan-gradient-hero {
+  background: radial-gradient(100% 100% at 50% 0%, rgba(14, 165, 233, 0.08) 0%, rgba(2, 132, 199, 0.03) 50%, rgba(255, 255, 255, 0) 100%);
+}
+
+.kayan-card-glow {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kayan-card-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(14, 165, 233, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}

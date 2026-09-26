@@ -1,0 +1,7 @@
+{
+  "name": "Kayan Store | متجر كيان",
+  "description": "المتجر الرسمي لتوزيع تطبيقات كيان سوفت وتوفير ملفات APK الموثوقة برئاسة المهندس جهاد الصليحي - الضالع، اليمن.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

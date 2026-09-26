@@ -1,0 +1,152 @@
+{
+  "applications": [
+    {
+      "id": "app_kayan_pdf_01",
+      "slug": "kayan-pdf",
+      "nameAr": "كيان PDF",
+      "nameEn": "Kayan PDF",
+      "shortDescAr": "تطبيق متكامل لإنشاء وضغط ودمج مستندات PDF وتصوير المستندات دون اتصال بالإنترنت وبأمان تام.",
+      "shortDescEn": "All-in-one offline PDF utility: convert images, camera scan, compress, and merge PDF documents with 100% privacy.",
+      "fullDescAr": "كيان PDF هو الأداة الاحترافية المعتمدة لمعالجة المستندات وملفات PDF على أجهزة أندرويد بدون أي اتصال بالإنترنت. تم تطوير التطبيق بواسطة المهندس جهاد الصليحي (كيان سوفت) لضمان السرية التامة للمستخدمين.\n\nيقدم التطبيق مجموعة متكاملة من الأدوات التي تشمل تحويل الصور إلى ملفات PDF فائقة الوضوح، ومسح المستندات ضوئياً عبر الكاميرا مع تحسين تلقائي للحدود والتباين، وضغط ملفات PDF الكبيرة بنسب ممتازة دون فقدان الجودة، ودمج عدة ملفات في مستند واحد منظم، وتصفح وإدارة الملفات الأخيرة بسرعة وسلاسة.\n\nالتطبيق مستقل تماماً ولا يحتاج إلى حساب مستخدم أو أي أذونات غير ضرورية، ويعمل محلياً بالكامل على جهازك لحماية خصوصية مستنداتك الشخصية والعملية.",
+      "fullDescEn": "Kayan PDF is the official professional document processing utility for Android devices, developed by Engineer Jehad Al-Solihy (Kayan Soft). It operates 100% offline to guarantee absolute data privacy.\n\nThe application provides an essential suite of document tools: convert single or multiple images to crisp PDF files, scan physical documents using your device camera with intelligent edge detection and contrast enhancement, compress large PDF files efficiently to save storage, merge multiple PDF documents into a unified file, and manage recent documents with speed and ease.\n\nKayan PDF requires no user accounts, no cloud sync, and no unnecessary permissions. All processing happens locally on your device.",
+      "featuresAr": [
+        "تحويل الصور إلى مستندات PDF بجودة فائقة",
+        "مسح المستندات بالكاميرا مع ضبط التباين والقص الذكي",
+        "ضغط ملفات PDF وتقليل حجمها بكفاءة عالية",
+        "دمج ملفات PDF متعددة في ملف واحد منظم",
+        "سجل سريع للملفات المنشأة والمحفوظة مؤخراً",
+        "واجهة عربية كاملة RTL بتصميم عصري مريح للعين",
+        "دعم كامل للغة الإنجليزية LTR",
+        "معالجة محلية 100% بدون إنترنت وبأمان مطلق"
+      ],
+      "featuresEn": [
+        "Convert photos and galleries to high-resolution PDF documents",
+        "Camera document scanner with edge correction & contrast tuning",
+        "Efficient PDF compression with minimal quality loss",
+        "Merge multiple PDF documents into a single ordered file",
+        "Quick access history for recently converted documents",
+        "Full native Arabic RTL interface with clean typography",
+        "Complete English LTR interface support",
+        "100% offline local on-device processing with zero data telemetry"
+      ],
+      "category": "Tools & Documents",
+      "minAndroid": "7.0 / API 24",
+      "packageName": "com.kayansoft.kayanpdf",
+      "iconUrl": "/src/assets/images/kayan_pdf_icon_1790438337873.jpg",
+      "bannerUrl": "/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg",
+      "privacyUrl": "/privacy",
+      "termsUrl": "/terms",
+      "copyright": "© 2026 المهندس جهاد الصليحي. جميع الحقوق محفوظة.",
+      "isPublished": true,
+      "featured": true,
+      "createdAt": "2026-09-01T10:00:00.000Z",
+      "updatedAt": "2026-09-26T17:46:56.996Z"
+    }
+  ],
+  "releases": [
+    {
+      "id": "rel_kayan_pdf_v1_0_0",
+      "appId": "app_kayan_pdf_01",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "apkFileName": "com.kayansoft.kayanpdf-v1.0.0.apk",
+      "apkDownloadUrl": "/api/download/rel_kayan_pdf_v1_0_0",
+      "apkSize": "1.21 KB",
+      "apkSizeBytes": 1243,
+      "sha256": "dc523b98bb44133bdf59be3888ed4c1212de0373d17741213fbe58ab99ca5336",
+      "minAndroid": "7.0 / API 24",
+      "releaseNotesAr": "الإصدار الأولي الرسمي لتطبيق كيان PDF. يشمل تحويل الصور إلى PDF، المسح بالكاميرا، ضغط ودمج المستندات، ودعم كامل للواجهتين العربية والإنجليزية مع معالجة محلية 100%.",
+      "releaseNotesEn": "Official initial release of Kayan PDF. Includes image-to-PDF conversion, camera document scanner, PDF compression, merging, full Arabic RTL & English LTR interfaces, and 100% offline processing.",
+      "isCurrent": true,
+      "releaseDate": "2026-09-20",
+      "createdAt": "2026-09-20T12:00:00.000Z"
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "ss_1",
+      "appId": "app_kayan_pdf_01",
+      "url": "/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg",
+      "captionAr": "واجهة الأدوات الرئيسية والتحويل المباشر",
+      "captionEn": "Main tools overview and instant document conversion",
+      "orderIndex": 0
+    },
+    {
+      "id": "ss_2",
+      "appId": "app_kayan_pdf_01",
+      "url": "/src/assets/images/kayan_store_hero_tech_1790438366597.jpg",
+      "captionAr": "معالجة محلية آمنة دون اتصال بالإنترنت",
+      "captionEn": "100% secure local on-device document processing",
+      "orderIndex": 1
+    }
+  ],
+  "admins": [
+    {
+      "id": "admin_root",
+      "username": "kayanadmin",
+      "email": "gehadalsolihy99@gmail.com",
+      "passwordHash": "$2b$10$aNBYpXc6GsZzxVanR9FZq.j9mGH8yrdpXZ2xQnSAAyRQo6shN0JsG",
+      "createdAt": "2026-09-26T17:46:56.996Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "b359b36782dc640ecebe4210491c12af9f29da59240cfa84c55331910cf2e061",
+      "adminId": "admin_root",
+      "expiresAt": 1791049659453,
+      "createdAt": "2026-09-26T17:47:39.454Z"
+    },
+    {
+      "token": "a846526766177d547288431207dcdd8acffc378037d8b80f4d79db4f26b6b905",
+      "adminId": "admin_root",
+      "expiresAt": 1791049687548,
+      "createdAt": "2026-09-26T17:48:07.549Z"
+    }
+  ],
+  "activityLogs": [
+    {
+      "id": "act_1790444887550_foua",
+      "action": "DELETE_APP",
+      "targetType": "Application",
+      "targetId": "app_1790444887549_s8jle",
+      "details": "حذف التطبيق: تطبيق اختبار",
+      "adminUsername": "admin",
+      "timestamp": "2026-09-26T17:48:07.550Z"
+    },
+    {
+      "id": "act_1790444887550_8ml7",
+      "action": "CREATE_APP",
+      "targetType": "Application",
+      "targetId": "app_1790444887549_s8jle",
+      "details": "إنشاء تطبيق جديد: تطبيق اختبار (Test App)",
+      "adminUsername": "admin",
+      "timestamp": "2026-09-26T17:48:07.550Z"
+    },
+    {
+      "id": "act_1790444859460_lvl0",
+      "action": "DELETE_APP",
+      "targetType": "Application",
+      "targetId": "app_1790444859455_2yqbl",
+      "details": "حذف التطبيق: تطبيق اختبار",
+      "adminUsername": "kayanadmin",
+      "timestamp": "2026-09-26T17:47:39.460Z"
+    },
+    {
+      "id": "act_1790444859455_ii6d",
+      "action": "CREATE_APP",
+      "targetType": "Application",
+      "targetId": "app_1790444859455_2yqbl",
+      "details": "إنشاء تطبيق جديد: تطبيق اختبار (Test App)",
+      "adminUsername": "kayanadmin",
+      "timestamp": "2026-09-26T17:47:39.455Z"
+    },
+    {
+      "id": "act_init",
+      "action": "SYSTEM_INIT",
+      "targetType": "SYSTEM",
+      "details": "تمت تهيئة نظام متجر كيان ونشر تطبيق كيان PDF الإصدار 1.0.0",
+      "adminUsername": "SYSTEM",
+      "timestamp": "2026-09-26T17:46:56.996Z"
+    }
+  ]
+}
