@@ -7,6 +7,7 @@ import {
   ArrowRight, FileText, CheckCircle2, ChevronRight, 
   Info, ExternalLink, AlertTriangle 
 } from 'lucide-react';
+import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../utils/assets.ts';
 
 interface AppDetailsPageProps {
   slug: string;
@@ -115,12 +116,12 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
           <div className="flex items-start gap-5">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-50 p-2.5 border border-slate-100 shadow-xs">
               <img
-                src={app.iconUrl || '/src/assets/images/kayan_pdf_icon_1790438337873.jpg'}
+                src={getSafeAssetUrl(app.iconUrl, KAYAN_PDF_ICON)}
                 alt={name}
                 referrerPolicy="no-referrer"
                 className="h-full w-full object-contain rounded-xl"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/src/assets/images/kayan_pdf_icon_1790438337873.jpg';
+                  (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
                 }}
               />
             </div>
@@ -221,10 +222,13 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
       {app.bannerUrl && (
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm">
           <img
-            src={app.bannerUrl}
+            src={getSafeAssetUrl(app.bannerUrl, KAYAN_PDF_BANNER)}
             alt={`${name} feature graphic`}
             referrerPolicy="no-referrer"
             className="w-full max-h-96 object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = KAYAN_PDF_BANNER;
+            }}
           />
         </div>
       )}
@@ -317,14 +321,17 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
             {screenshots.map((ss) => (
               <div 
                 key={ss.id}
-                onClick={() => setSelectedScreenshot(ss.url)}
+                onClick={() => setSelectedScreenshot(getSafeAssetUrl(ss.url, KAYAN_PDF_BANNER))}
                 className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm transition-all hover:border-sky-300"
               >
                 <img
-                  src={ss.url}
+                  src={getSafeAssetUrl(ss.url, KAYAN_PDF_BANNER)}
                   alt={lang === 'ar' ? ss.captionAr : ss.captionEn}
                   referrerPolicy="no-referrer"
                   className="h-56 w-full object-cover transition-transform group-hover:scale-102"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = KAYAN_PDF_BANNER;
+                  }}
                 />
                 <div className="bg-white p-3 text-xs font-medium text-slate-700">
                   {lang === 'ar' ? ss.captionAr : ss.captionEn}

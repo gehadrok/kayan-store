@@ -9,6 +9,7 @@ import {
   HardDrive, Calendar, ArrowRight, ArrowLeft, Clock,
   X, Check, AlertCircle
 } from 'lucide-react';
+import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../../utils/assets.ts';
 
 interface AdminDashboardProps {
   onNavigate: (path: string) => void;
@@ -47,8 +48,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     category: 'Tools & Documents',
     minAndroid: '7.0 / API 24',
     packageName: '',
-    iconUrl: '/src/assets/images/kayan_pdf_icon_1790438337873.jpg',
-    bannerUrl: '/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg',
+    iconUrl: KAYAN_PDF_ICON,
+    bannerUrl: KAYAN_PDF_BANNER,
     privacyUrl: '/privacy',
     termsUrl: '/terms',
     copyright: '© 2026 المهندس جهاد الصليحي. جميع الحقوق محفوظة.',
@@ -161,8 +162,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       category: 'Tools & Documents',
       minAndroid: '7.0 / API 24',
       packageName: 'com.kayansoft.',
-      iconUrl: '/src/assets/images/kayan_pdf_icon_1790438337873.jpg',
-      bannerUrl: '/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg',
+      iconUrl: KAYAN_PDF_ICON,
+      bannerUrl: KAYAN_PDF_BANNER,
       privacyUrl: '/privacy',
       termsUrl: '/terms',
       copyright: '© 2026 المهندس جهاد الصليحي. جميع الحقوق محفوظة.',
@@ -650,9 +651,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                 <div key={appItem.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <img
-                      src={appItem.iconUrl}
+                      src={getSafeAssetUrl(appItem.iconUrl, KAYAN_PDF_ICON)}
                       alt={appItem.nameAr}
                       className="h-10 w-10 rounded-xl object-contain bg-slate-50 p-1 border border-slate-100"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
+                      }}
                     />
                     <div>
                       <h4 className="text-sm font-bold text-slate-900">{appItem.nameAr} ({appItem.nameEn})</h4>
@@ -716,9 +720,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={appItem.iconUrl}
+                          src={getSafeAssetUrl(appItem.iconUrl, KAYAN_PDF_ICON)}
                           alt={appItem.nameAr}
                           className="h-9 w-9 rounded-xl object-contain bg-slate-50 p-1 border border-slate-200"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
+                          }}
                         />
                         <div>
                           <span className="font-bold text-slate-900 block">{appItem.nameAr}</span>

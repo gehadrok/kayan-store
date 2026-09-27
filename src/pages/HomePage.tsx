@@ -7,6 +7,7 @@ import {
   ArrowRight, ArrowLeft, Smartphone, FileText, 
   Layers, ExternalLink, HardDrive, Check 
 } from 'lucide-react';
+import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../utils/assets.ts';
 
 interface HomePageProps {
   apps: Application[];
@@ -108,9 +109,12 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 p-2 border border-sky-100">
                       <img
-                        src="/src/assets/images/kayan_pdf_icon_1790438337873.jpg"
+                        src={KAYAN_PDF_ICON}
                         alt="Kayan PDF"
                         className="h-full w-full object-contain rounded-lg"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
+                        }}
                       />
                     </div>
                     <div className="text-start">
@@ -130,9 +134,12 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
                 {/* Banner illustration */}
                 <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100">
                   <img
-                    src="/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg"
+                    src={KAYAN_PDF_BANNER}
                     alt="Kayan PDF Features"
                     className="h-44 w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = KAYAN_PDF_BANNER;
+                    }}
                   />
                 </div>
 
@@ -189,9 +196,12 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
               <div className="lg:col-span-4 flex flex-col items-center sm:items-start text-center sm:text-start space-y-4">
                 <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white p-3.5 shadow-md border border-slate-100">
                   <img
-                    src={featuredApp.iconUrl || '/src/assets/images/kayan_pdf_icon_1790438337873.jpg'}
+                    src={getSafeAssetUrl(featuredApp.iconUrl, KAYAN_PDF_ICON)}
                     alt={featuredApp.nameAr}
                     className="h-full w-full object-contain rounded-2xl"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
+                    }}
                   />
                 </div>
                 <div>

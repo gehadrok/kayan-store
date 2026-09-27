@@ -2,6 +2,7 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { Application } from '../../types.ts';
 import { Download, ArrowRight, ArrowLeft, ShieldCheck, Smartphone } from 'lucide-react';
+import { getSafeAssetUrl, KAYAN_PDF_ICON } from '../../utils/assets.ts';
 
 interface AppCardProps {
   app: Application;
@@ -29,12 +30,12 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onSelect, onDownloadClick
             className="flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-slate-50 p-2.5 border border-slate-100 transition-transform group-hover:scale-105"
           >
             <img
-              src={app.iconUrl || '/src/assets/images/kayan_pdf_icon_1790438337873.jpg'}
+              src={getSafeAssetUrl(app.iconUrl, KAYAN_PDF_ICON)}
               alt={name}
               referrerPolicy="no-referrer"
               className="h-full w-full object-contain rounded-xl"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = '/src/assets/images/kayan_pdf_icon_1790438337873.jpg';
+                (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
               }}
             />
           </div>

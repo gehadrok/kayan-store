@@ -26,6 +26,14 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 app.use('/uploads/apks', express.static(UPLOADS_DIR));
 
+// Static images directory from public/assets/images
+const PUBLIC_ASSETS_DIR = path.resolve(process.cwd(), 'public', 'assets', 'images');
+if (fs.existsSync(PUBLIC_ASSETS_DIR)) {
+  app.use('/assets/images', express.static(PUBLIC_ASSETS_DIR));
+  // Backwards compatibility for legacy /src/assets/images requests
+  app.use('/src/assets/images', express.static(PUBLIC_ASSETS_DIR));
+}
+
 // Multer memory storage for validating APK in-memory first
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -388,8 +396,8 @@ app.post('/api/admin/apps', requireAdmin, async (req: Request, res: Response) =>
     category: category || 'Tools & Documents',
     minAndroid: minAndroid || '7.0 / API 24',
     packageName: packageName.trim(),
-    iconUrl: iconUrl || '/src/assets/images/kayan_pdf_icon_1790438337873.jpg',
-    bannerUrl: bannerUrl || '/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg',
+    iconUrl: iconUrl || '/assets/images/kayan_pdf_icon.jpg',
+    bannerUrl: bannerUrl || '/assets/images/kayan_pdf_feature_banner.jpg',
     privacyUrl: privacyUrl || '/privacy',
     termsUrl: termsUrl || '/terms',
     copyright: copyright || '© 2026 المهندس جهاد الصليحي. جميع الحقوق محفوظة.',

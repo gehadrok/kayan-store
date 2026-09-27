@@ -127,6 +127,32 @@ const initialPassword = process.env.ADMIN_INITIAL_PASSWORD?.trim() || 'KayanAdmi
 const salt = bcrypt.genSaltSync(10);
 const passwordHash = bcrypt.hashSync(initialPassword, salt);
 
+export function normalizeAssetUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return '/assets/images/kayan_pdf_icon.jpg';
+  }
+  const trimmed = url.trim();
+  if (trimmed.includes('kayan_pdf_icon')) {
+    return '/assets/images/kayan_pdf_icon.jpg';
+  }
+  if (trimmed.includes('kayan_pdf_feature_banner')) {
+    return '/assets/images/kayan_pdf_feature_banner.jpg';
+  }
+  if (trimmed.includes('kayan_store_logo')) {
+    return '/assets/images/kayan_store_logo.jpg';
+  }
+  if (trimmed.includes('kayan_store_hero_tech')) {
+    return '/assets/images/kayan_store_hero_tech.jpg';
+  }
+  if (trimmed.startsWith('/src/assets/images/')) {
+    return trimmed.replace('/src/assets/images/', '/assets/images/');
+  }
+  if (trimmed.startsWith('/src/assets/')) {
+    return trimmed.replace('/src/assets/', '/assets/');
+  }
+  return trimmed;
+}
+
 const defaultAppData: Application = {
   id: 'app_kayan_pdf_01',
   slug: 'kayan-pdf',
@@ -159,8 +185,8 @@ const defaultAppData: Application = {
   category: 'Tools & Documents',
   minAndroid: '7.0 / API 24',
   packageName: 'com.kayansoft.kayanpdf',
-  iconUrl: '/src/assets/images/kayan_pdf_icon_1790438337873.jpg',
-  bannerUrl: '/src/assets/images/kayan_pdf_feature_banner_1790438354730.jpg',
+  iconUrl: '/assets/images/kayan_pdf_icon.jpg',
+  bannerUrl: '/assets/images/kayan_pdf_feature_banner.jpg',
   privacyUrl: '/privacy',
   termsUrl: '/terms',
   copyright: '© 2026 المهندس جهاد الصليحي. جميع الحقوق محفوظة.',
@@ -328,6 +354,34 @@ class PostgresOrJsonDatabase {
         );
       }
 
+      // Migration / Normalization: Ensure existing PostgreSQL records use production-safe asset URLs
+      try {
+        await this.pool.query(`
+          UPDATE applications
+          SET icon_url = '/assets/images/kayan_pdf_icon.jpg'
+          WHERE icon_url LIKE '%kayan_pdf_icon%';
+
+          UPDATE applications
+          SET banner_url = '/assets/images/kayan_pdf_feature_banner.jpg'
+          WHERE banner_url LIKE '%kayan_pdf_feature_banner%';
+
+          UPDATE applications
+          SET icon_url = REPLACE(icon_url, '/src/assets/images/', '/assets/images/'),
+              banner_url = REPLACE(banner_url, '/src/assets/images/', '/assets/images/')
+          WHERE icon_url LIKE '/src/assets/images/%' OR banner_url LIKE '/src/assets/images/%';
+
+          UPDATE screenshots
+          SET url = '/assets/images/kayan_pdf_feature_banner.jpg'
+          WHERE url LIKE '%kayan_pdf_feature_banner%';
+
+          UPDATE screenshots
+          SET url = REPLACE(url, '/src/assets/images/', '/assets/images/')
+          WHERE url LIKE '/src/assets/images/%';
+        `);
+      } catch (normErr) {
+        console.warn('PostgreSQL asset URL normalization notice:', normErr);
+      }
+
       console.log('📦 PostgreSQL database connected and verified successfully.');
     } catch (err: any) {
       const sanitizedMsg = (err?.message || '').replace(DATABASE_URL || '', '[REDACTED_DATABASE_URL]');
@@ -351,7 +405,32 @@ class PostgresOrJsonDatabase {
     if (fs.existsSync(DB_FILE)) {
       try {
         const content = fs.readFileSync(DB_FILE, 'utf-8');
-        return JSON.parse(content);
+        const data: DatabaseSchema = JSON.parse(content);
+        let modified = false;
+        if (data.applications) {
+          for (const app of data.applications) {
+            if (app.iconUrl && (app.iconUrl.includes('/src/assets/images/') || app.iconUrl.includes('kayan_pdf_icon_'))) {
+              app.iconUrl = normalizeAssetUrl(app.iconUrl);
+              modified = true;
+            }
+            if (app.bannerUrl && (app.bannerUrl.includes('/src/assets/images/') || app.bannerUrl.includes('kayan_pdf_feature_banner_'))) {
+              app.bannerUrl = normalizeAssetUrl(app.bannerUrl);
+              modified = true;
+            }
+          }
+        }
+        if (data.screenshots) {
+          for (const ss of data.screenshots) {
+            if (ss.url && (ss.url.includes('/src/assets/images/') || ss.url.includes('kayan_pdf_feature_banner_'))) {
+              ss.url = normalizeAssetUrl(ss.url);
+              modified = true;
+            }
+          }
+        }
+        if (modified) {
+          this.saveJson(data);
+        }
+        return data;
       } catch (err) {
         console.error('Failed to load store.json', err);
       }
@@ -509,14 +588,17 @@ class PostgresOrJsonDatabase {
       return res.rows.map(r => ({
         id: r.id,
         appId: r.app_id,
-        url: r.url,
+        url: normalizeAssetUrl(r.url),
         captionAr: r.caption_ar,
         captionEn: r.caption_en,
         orderIndex: r.order_index
       }));
     }
     if (!this.jsonData) return [];
-    return this.jsonData.screenshots.filter(s => s.appId === appId).sort((a, b) => a.orderIndex - b.orderIndex);
+    return this.jsonData.screenshots
+      .filter(s => s.appId === appId)
+      .map(s => ({ ...s, url: normalizeAssetUrl(s.url) }))
+      .sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
   public async getAdminByUsername(username: string): Promise<AdminUser | undefined> {
@@ -817,8 +899,8 @@ class PostgresOrJsonDatabase {
       category: r.category,
       minAndroid: r.min_android,
       packageName: r.package_name,
-      iconUrl: r.icon_url,
-      bannerUrl: r.banner_url,
+      iconUrl: normalizeAssetUrl(r.icon_url),
+      bannerUrl: normalizeAssetUrl(r.banner_url),
       privacyUrl: r.privacy_url,
       termsUrl: r.terms_url,
       copyright: r.copyright,

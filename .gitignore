@@ -1,0 +1,8 @@
+.env
+.env.*
+node_modules/
+dist/
+data/
+uploads/
+*.apk
+*.aab

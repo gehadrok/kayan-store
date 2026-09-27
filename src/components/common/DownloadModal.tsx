@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { Application, Release } from '../../types.ts';
 import { Download, ShieldCheck, Copy, Check, AlertTriangle, X, Smartphone, Hash, HardDrive, Info } from 'lucide-react';
+import { getSafeAssetUrl, KAYAN_PDF_ICON } from '../../utils/assets.ts';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -73,12 +74,12 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
         <div className="flex items-center gap-3.5 mb-5 pb-4 border-b border-slate-100">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 p-2 border border-sky-100 shrink-0">
             <img
-              src={app.iconUrl || '/src/assets/images/kayan_pdf_icon_1790438337873.jpg'}
+              src={getSafeAssetUrl(app.iconUrl, KAYAN_PDF_ICON)}
               alt={appName}
               referrerPolicy="no-referrer"
               className="h-full w-full object-contain rounded-lg"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = '/src/assets/images/kayan_pdf_icon_1790438337873.jpg';
+                (e.target as HTMLImageElement).src = KAYAN_PDF_ICON;
               }}
             />
           </div>
