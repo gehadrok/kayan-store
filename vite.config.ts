@@ -17,6 +17,11 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      allowedHosts: [
+        'shark-posh-koala.abasthan.app',
+        'localhost',
+        '127.0.0.1'
+      ],
     },
   };
 });

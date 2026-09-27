@@ -10,7 +10,7 @@ import { validateAndAnalyzeApk } from './src/server/apkValidator.ts';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
-const IS_PROD = process.env.NODE_ENV === 'production';
+const IS_PROD = process.env.NODE_ENV === 'production' || (process.env.NODE_ENV !== 'development' && fs.existsSync(path.resolve(process.cwd(), 'dist')));
 const STORAGE_DRIVER = process.env.STORAGE_DRIVER || (IS_PROD ? 'github' : 'local');
 
 app.use(express.json());
@@ -568,6 +568,7 @@ async function startServer() {
     });
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
+    console.log(`🚀 Kayan Store production server serving compiled static files from ${distPath} on port ${PORT}`);
     app.use(express.static(distPath));
     app.get('*', (req: Request, res: Response) => {
       res.sendFile(path.join(distPath, 'index.html'));
