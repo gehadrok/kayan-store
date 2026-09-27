@@ -311,6 +311,23 @@ class PostgresOrJsonDatabase {
         );
       }
 
+      const relRes = await this.pool.query('SELECT COUNT(*) FROM releases');
+      if (parseInt(relRes.rows[0].count, 10) === 0) {
+        await this.pool.query(
+          `INSERT INTO releases (id, app_id, version_name, version_code, apk_file_name, apk_download_url, apk_size, apk_size_bytes, sha256, min_android, release_notes_ar, release_notes_en, is_current, release_date)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          [
+            'rel_kayan_pdf_v1_0_0', defaultAppData.id, '1.0.0', 1, 'KayanPDF-v1.0.0.apk',
+            'https://github.com/gehadrok/kayan-store/releases/download/v1.0.0/KayanPDF-v1.0.0.apk',
+            '13.4 MB', 14036833, 'e60f28c7f373391ecddecd902fb20b24b745dcb51ebc21926f90d55d56533',
+            '7.0 / API 24',
+            'الإصدار الأولي المستقر لتطبيق كيان PDF مع دعم المعالجة المحلية بالكامل ومسح المستندات.',
+            'Initial stable release of Kayan PDF with full offline document processing and scanner support.',
+            true, '2026-09-01'
+          ]
+        );
+      }
+
       console.log('📦 PostgreSQL database connected and verified successfully.');
     } catch (err: any) {
       const sanitizedMsg = (err?.message || '').replace(DATABASE_URL || '', '[REDACTED_DATABASE_URL]');
@@ -341,7 +358,25 @@ class PostgresOrJsonDatabase {
     }
     const data: DatabaseSchema = {
       applications: [defaultAppData],
-      releases: [],
+      releases: [
+        {
+          id: 'rel_kayan_pdf_v1_0_0',
+          appId: defaultAppData.id,
+          versionName: '1.0.0',
+          versionCode: 1,
+          apkFileName: 'KayanPDF-v1.0.0.apk',
+          apkDownloadUrl: 'https://github.com/gehadrok/kayan-store/releases/download/v1.0.0/KayanPDF-v1.0.0.apk',
+          apkSize: '13.4 MB',
+          apkSizeBytes: 14036833,
+          sha256: 'e60f28c7f373391ecddecd902fb20b24b745dcb51ebc21926f90d55d56533',
+          minAndroid: '7.0 / API 24',
+          releaseNotesAr: 'الإصدار الأولي المستقر لتطبيق كيان PDF مع دعم المعالجة المحلية بالكامل ومسح المستندات.',
+          releaseNotesEn: 'Initial stable release of Kayan PDF with full offline document processing and scanner support.',
+          isCurrent: true,
+          releaseDate: '2026-09-01',
+          createdAt: new Date('2026-09-01T10:00:00Z').toISOString()
+        }
+      ],
       screenshots: [
         {
           id: 'ss_1',

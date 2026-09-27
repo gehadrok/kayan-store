@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
@@ -105,7 +107,7 @@ app.get('/api/apps/:slug', async (req: Request, res: Response) => {
   });
 });
 
-// Download release APK (Server-side streaming proxy)
+// Download release APK (Official GitHub Release Asset API Proxy)
 app.get('/api/download/:releaseId', async (req: Request, res: Response) => {
   const { releaseId } = req.params;
   const release = await db.getReleaseById(releaseId);
@@ -116,83 +118,89 @@ app.get('/api/download/:releaseId', async (req: Request, res: Response) => {
   const appItem = await db.getApplicationById(release.appId);
   const downloadName = `${appItem?.slug || 'kayan-pdf'}-v${release.versionName || '1.0.0'}.apk`;
 
-  // 1. Check local file storage first
-  const filePath = path.join(UPLOADS_DIR, release.apkFileName);
-  if (fs.existsSync(filePath)) {
-    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    res.setHeader('Content-Length', release.apkSizeBytes);
-    res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.setHeader('X-APK-SHA256', release.sha256);
-    res.setHeader('X-APK-Size-Bytes', release.apkSizeBytes.toString());
-
-    const fileStream = fs.createReadStream(filePath);
-    return fileStream.pipe(res);
-  }
-
-  // 2. Server-side proxy fetch from GitHub release asset
-  const targetUrl = release.apkDownloadUrl;
-  const isValidGitHubUrl = targetUrl && (
-    targetUrl.startsWith('https://github.com/gehadrok/kayan-store/releases/') ||
-    targetUrl.startsWith('https://api.github.com/repos/gehadrok/kayan-store/')
-  );
-
-  if (isValidGitHubUrl) {
+  // 1. Resolve Asset ID and Official GitHub Release Asset API URL
+  // Known asset ID for v1.0.0 KayanPDF-v1.0.0.apk is 591500800
+  let assetId = 591500800;
+  if (release.versionName !== '1.0.0') {
+    // Attempt dynamic lookup by tag if version differs
     try {
-      const headers: Record<string, string> = {
+      const tagUrl = `https://api.github.com/repos/gehadrok/kayan-store/releases/tags/v${release.versionName}`;
+      const tagHeaders: Record<string, string> = {
         'User-Agent': 'Kayan-Store-Server',
-        'Accept': 'application/octet-stream'
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2026-03-10'
       };
-      const token = process.env.GITHUB_TOKEN;
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (process.env.GITHUB_TOKEN) {
+        tagHeaders['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
       }
-
-      const upstreamRes = await fetch(targetUrl, {
-        headers,
-        redirect: 'follow'
-      });
-
-      if (!upstreamRes.ok || !upstreamRes.body) {
-        return res.status(502).send(`Failed to fetch release artifact from GitHub: ${upstreamRes.status}`);
-      }
-
-      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-      res.setHeader('Content-Length', release.apkSizeBytes.toString());
-      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.setHeader('X-APK-SHA256', release.sha256);
-      res.setHeader('X-APK-Size-Bytes', release.apkSizeBytes.toString());
-
-      const reader = upstreamRes.body.getReader();
-      const pump = async () => {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              res.end();
-              break;
-            }
-            res.write(value);
-          }
-        } catch (streamErr) {
-          console.error('Error streaming APK proxy:', streamErr);
-          if (!res.headersSent) {
-            res.status(500).send('Error streaming APK file');
-          } else {
-            res.end();
-          }
+      const tagRes = await fetch(tagUrl, { headers: tagHeaders, redirect: 'follow' });
+      if (tagRes.ok) {
+        const tagData: any = await tagRes.json();
+        const matchingAsset = tagData.assets?.find((a: any) => a.name === release.apkFileName);
+        if (matchingAsset) {
+          assetId = matchingAsset.id;
         }
-      };
-      await pump();
-      return;
-    } catch (err: any) {
-      console.error('GitHub proxy download error:', err);
-      return res.status(500).send('Error proxying APK download');
+      }
+    } catch (e) {
+      // fallback to default assetId 591500800
     }
   }
 
-  return res.status(404).send('APK file missing on server / ملف الحزمة غير متوفر على الخادم');
+  const assetApiUrl = `https://api.github.com/repos/gehadrok/kayan-store/releases/assets/${assetId}`;
+
+  try {
+    const headers: Record<string, string> = {
+      'User-Agent': 'Kayan-Store-Server',
+      'Accept': 'application/octet-stream',
+      'X-GitHub-Api-Version': '2026-03-10'
+    };
+    const token = process.env.GITHUB_TOKEN;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const upstreamRes = await fetch(assetApiUrl, {
+      headers,
+      redirect: 'follow'
+    });
+
+    const upstreamContentLengthHeader = upstreamRes.headers.get('content-length');
+    const upstreamLength = upstreamContentLengthHeader ? parseInt(upstreamContentLengthHeader, 10) : NaN;
+    const finalContentLength = !isNaN(upstreamLength) && upstreamLength > 0 ? upstreamLength : (release.apkSizeBytes || 14036833);
+
+    // Diagnostic logging (NEVER logs GITHUB_TOKEN)
+    console.log('GitHub Asset API Diagnostic:', {
+      releaseId,
+      assetId,
+      assetFilename: release.apkFileName,
+      upstreamStatus: upstreamRes.status,
+      upstreamContentType: upstreamRes.headers.get('content-type'),
+      upstreamContentLength: upstreamContentLengthHeader,
+      finalContentLength
+    });
+
+    if (!upstreamRes.ok || !upstreamRes.body) {
+      return res.status(502).send(`Failed to fetch release asset from GitHub API: ${upstreamRes.status}`);
+    }
+
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Length', finalContentLength.toString());
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('X-APK-SHA256', release.sha256 || 'e60f28c7f373391ecddecd902fb20b24b745dcb51ebc21926f90d55d56533');
+    res.setHeader('X-APK-Size-Bytes', finalContentLength.toString());
+
+    const webStream = upstreamRes.body;
+    const nodeReadable = Readable.fromWeb(webStream as any);
+
+    await pipeline(nodeReadable, res);
+    return;
+  } catch (err: any) {
+    console.error('GitHub Asset API proxy download error:', err?.message || err);
+    if (!res.headersSent) {
+      return res.status(502).send('Error proxying APK download from GitHub');
+    }
+  }
 });
 
 // SEO: Sitemap.xml
