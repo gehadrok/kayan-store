@@ -105,7 +105,7 @@ app.get('/api/apps/:slug', async (req: Request, res: Response) => {
   });
 });
 
-// Download release APK
+// Download release APK (Server-side streaming proxy)
 app.get('/api/download/:releaseId', async (req: Request, res: Response) => {
   const { releaseId } = req.params;
   const release = await db.getReleaseById(releaseId);
@@ -114,16 +114,15 @@ app.get('/api/download/:releaseId', async (req: Request, res: Response) => {
   }
 
   const appItem = await db.getApplicationById(release.appId);
+  const downloadName = `${appItem?.slug || 'kayan-pdf'}-v${release.versionName || '1.0.0'}.apk`;
 
-  if (STORAGE_DRIVER === 'github' && release.apkDownloadUrl && release.apkDownloadUrl.startsWith('http')) {
-    return res.redirect(release.apkDownloadUrl);
-  }
-
+  // 1. Check local file storage first
   const filePath = path.join(UPLOADS_DIR, release.apkFileName);
   if (fs.existsSync(filePath)) {
-    const downloadName = `${appItem?.slug || 'app'}-v${release.versionName}.apk`;
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Length', release.apkSizeBytes);
     res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
     res.setHeader('X-APK-SHA256', release.sha256);
     res.setHeader('X-APK-Size-Bytes', release.apkSizeBytes.toString());
 
@@ -131,8 +130,66 @@ app.get('/api/download/:releaseId', async (req: Request, res: Response) => {
     return fileStream.pipe(res);
   }
 
-  if (release.apkDownloadUrl && release.apkDownloadUrl.startsWith('http')) {
-    return res.redirect(release.apkDownloadUrl);
+  // 2. Server-side proxy fetch from GitHub release asset
+  const targetUrl = release.apkDownloadUrl;
+  const isValidGitHubUrl = targetUrl && (
+    targetUrl.startsWith('https://github.com/gehadrok/kayan-store/releases/') ||
+    targetUrl.startsWith('https://api.github.com/repos/gehadrok/kayan-store/')
+  );
+
+  if (isValidGitHubUrl) {
+    try {
+      const headers: Record<string, string> = {
+        'User-Agent': 'Kayan-Store-Server',
+        'Accept': 'application/octet-stream'
+      };
+      const token = process.env.GITHUB_TOKEN;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const upstreamRes = await fetch(targetUrl, {
+        headers,
+        redirect: 'follow'
+      });
+
+      if (!upstreamRes.ok || !upstreamRes.body) {
+        return res.status(502).send(`Failed to fetch release artifact from GitHub: ${upstreamRes.status}`);
+      }
+
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Length', release.apkSizeBytes.toString());
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('X-APK-SHA256', release.sha256);
+      res.setHeader('X-APK-Size-Bytes', release.apkSizeBytes.toString());
+
+      const reader = upstreamRes.body.getReader();
+      const pump = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              res.end();
+              break;
+            }
+            res.write(value);
+          }
+        } catch (streamErr) {
+          console.error('Error streaming APK proxy:', streamErr);
+          if (!res.headersSent) {
+            res.status(500).send('Error streaming APK file');
+          } else {
+            res.end();
+          }
+        }
+      };
+      await pump();
+      return;
+    } catch (err: any) {
+      console.error('GitHub proxy download error:', err);
+      return res.status(500).send('Error proxying APK download');
+    }
   }
 
   return res.status(404).send('APK file missing on server / ملف الحزمة غير متوفر على الخادم');

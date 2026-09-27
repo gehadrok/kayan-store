@@ -28,7 +28,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
   const size = currentRel?.apkSize || '15 MB';
   const version = currentRel ? `v${currentRel.versionName} (${currentRel.versionCode})` : 'v1.0.0';
   const minAndroid = currentRel?.minAndroid || app.minAndroid || '7.0 / API 24';
-  const downloadUrl = currentRel?.apkDownloadUrl || `/api/download/${currentRel?.id || 'rel_kayan_pdf_v1_0_0'}`;
+  const downloadUrl = `/api/download/${currentRel?.id || 'rel_kayan_pdf_v1_0_0'}`;
 
   const handleCopySha = () => {
     if (sha256) {
