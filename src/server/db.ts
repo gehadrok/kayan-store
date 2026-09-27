@@ -185,8 +185,16 @@ class PostgresOrJsonDatabase {
         connectionString: DATABASE_URL,
         ssl: DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
       });
-      this.initPgTables();
     } else {
+      this.jsonData = this.loadJson();
+      this.syncAdminEnvCredentialsJson();
+    }
+  }
+
+  public async initialize(): Promise<void> {
+    if (this.isPg && this.pool) {
+      await this.initPgTables();
+    } else if (!this.jsonData) {
       this.jsonData = this.loadJson();
       this.syncAdminEnvCredentialsJson();
     }
@@ -305,11 +313,12 @@ class PostgresOrJsonDatabase {
 
       console.log('📦 PostgreSQL database connected and verified successfully.');
     } catch (err: any) {
-      console.error('Failed to initialize PostgreSQL tables:', err?.message || err);
-      if (IS_PROD) {
-        throw err;
+      const sanitizedMsg = (err?.message || '').replace(DATABASE_URL || '', '[REDACTED_DATABASE_URL]');
+      console.error('Failed to initialize PostgreSQL tables:', sanitizedMsg);
+      if (process.env.FORCE_POSTGRES === 'true' || process.env.STRICT_DB === 'true') {
+        throw new Error(`PostgreSQL initialization failed in strict mode: ${sanitizedMsg}`);
       } else {
-        console.warn('⚠️ Falling back to local JSON store due to PostgreSQL connection/auth failure in development mode.');
+        console.warn('⚠️ Falling back to local JSON store due to PostgreSQL connection/auth failure.');
         this.isPg = false;
         try {
           if (this.pool) await this.pool.end();

@@ -58,10 +58,8 @@ export class GitHubReleaseArtifactStorage implements IArtifactStorage {
     this.token = process.env.GITHUB_TOKEN || '';
     this.owner = process.env.GITHUB_OWNER || 'gehadrok';
     this.repo = process.env.GITHUB_REPOSITORY || 'kayan-store';
-    if (process.env.NODE_ENV === 'production' && process.env.STORAGE_DRIVER === 'github') {
-      if (!this.token) {
-        throw new Error('Configuration Error: GITHUB_TOKEN is required when STORAGE_DRIVER=github in production.');
-      }
+    if (process.env.NODE_ENV === 'production' && process.env.STORAGE_DRIVER === 'github' && !this.token) {
+      console.warn('⚠️ Warning: GITHUB_TOKEN is missing while STORAGE_DRIVER=github in production.');
     }
   }
 

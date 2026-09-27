@@ -545,6 +545,14 @@ app.get('/api/admin/activity', requireAdmin, async (req: Request, res: Response)
 // VITE OR STATIC SERVE
 // ==========================================
 async function startServer() {
+  try {
+    console.log('🚀 Initializing database...');
+    await db.initialize();
+  } catch (err: any) {
+    console.error('❌ Critical database initialization error:', err?.message || err);
+    process.exit(1);
+  }
+
   if (!IS_PROD) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
