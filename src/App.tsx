@@ -1,18 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { LanguageProvider } from './context/LanguageContext.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
+import { UserAuthProvider } from './context/UserAuthContext.tsx';
 import { Application, Release } from './types.ts';
 import { Navbar } from './components/layout/Navbar.tsx';
 import { Footer } from './components/layout/Footer.tsx';
 import { DownloadModal } from './components/common/DownloadModal.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { CatalogPage } from './pages/CatalogPage.tsx';
+import { ProductCatalogPage } from './pages/products/CatalogPage.tsx';
+import { ProductDetailsPage } from './pages/products/ProductDetailsPage.tsx';
 import { AppDetailsPage } from './pages/AppDetailsPage.tsx';
 import { PrivacyPage } from './pages/PrivacyPage.tsx';
 import { TermsPage } from './pages/TermsPage.tsx';
 import { LicensesPage } from './pages/LicensesPage.tsx';
 import { AboutPage } from './pages/AboutPage.tsx';
 import { AdminDashboard } from './pages/admin/AdminDashboard.tsx';
+import { LoginPage } from './pages/auth/LoginPage.tsx';
+import { RegisterPage } from './pages/auth/RegisterPage.tsx';
+import { AccountPage } from './pages/account/AccountPage.tsx';
+import { AIWorkspacePage } from './pages/ai/AIWorkspacePage.tsx';
+import { AIDocumentsListPage } from './pages/ai/AIDocumentsListPage.tsx';
+import { AIDocumentDetailPage } from './pages/ai/AIDocumentDetailPage.tsx';
+import { AppBuilderPage } from './pages/ai/AppBuilderPage.tsx';
 
 export function AppContent() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -95,6 +105,15 @@ export function AppContent() {
       );
     }
 
+    if (currentPath === '/products') {
+      return <ProductCatalogPage onNavigate={navigate} />;
+    }
+
+    if (currentPath.startsWith('/products/')) {
+      const slug = currentPath.replace('/products/', '').split('/')[0];
+      return <ProductDetailsPage slug={slug} onNavigate={navigate} />;
+    }
+
     if (currentPath.startsWith('/apps/')) {
       const slug = currentPath.replace('/apps/', '').split('/')[0];
       return (
@@ -122,6 +141,43 @@ export function AppContent() {
       return <AboutPage onNavigate={navigate} />;
     }
 
+    if (currentPath === '/login') {
+      return <LoginPage onNavigate={navigate} />;
+    }
+
+    if (currentPath === '/register') {
+      return <RegisterPage onNavigate={navigate} />;
+    }
+
+    if (currentPath === '/account') {
+      return <AccountPage onNavigate={navigate} defaultTab="profile" />;
+    }
+
+    if (currentPath === '/library') {
+      return <AccountPage onNavigate={navigate} defaultTab="library" />;
+    }
+
+    if (currentPath === '/favorites') {
+      return <AccountPage onNavigate={navigate} defaultTab="favorites" />;
+    }
+
+    if (currentPath.startsWith('/ai/documents/')) {
+      const docId = currentPath.replace('/ai/documents/', '').split('/')[0];
+      return <AIDocumentDetailPage documentId={docId} onNavigate={navigate} />;
+    }
+
+    if (currentPath === '/ai/documents') {
+      return <AIDocumentsListPage onNavigate={navigate} />;
+    }
+
+    if (currentPath === '/ai/app-builder') {
+      return <AppBuilderPage onNavigate={navigate} />;
+    }
+
+    if (currentPath === '/ai' || currentPath.startsWith('/ai')) {
+      return <AIWorkspacePage onNavigate={navigate} />;
+    }
+
     if (currentPath === '/admin' || currentPath.startsWith('/admin')) {
       return <AdminDashboard onNavigate={navigate} />;
     }
@@ -138,7 +194,7 @@ export function AppContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 selection:bg-sky-500/20 selection:text-sky-900">
-      
+
       {/* Schema.org Structured Data */}
       <script
         type="application/ld+json"
@@ -196,7 +252,9 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <AppContent />
+        <UserAuthProvider>
+          <AppContent />
+        </UserAuthProvider>
       </AuthProvider>
     </LanguageProvider>
   );

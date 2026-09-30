@@ -2,10 +2,10 @@ import React from 'react';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { Application } from '../types.ts';
 import { AppCard } from '../components/common/AppCard.tsx';
-import { 
-  Download, Shield, Cpu, Lock, CheckCircle2, 
-  ArrowRight, ArrowLeft, Smartphone, FileText, 
-  Layers, ExternalLink, HardDrive, Check 
+import {
+  Download, Shield, Cpu, Lock, CheckCircle2,
+  ArrowRight, ArrowLeft, Smartphone, FileText,
+  Layers, ExternalLink, HardDrive, Check
 } from 'lucide-react';
 import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../utils/assets.ts';
 
@@ -30,15 +30,15 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
 
   return (
     <div className="space-y-20 pb-16">
-      
+
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-16 md:pt-18 md:pb-24 border-b border-slate-200/60 kayan-gradient-hero">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
-            
+
             {/* Left/Start Column: Text & CTAs (7 cols) */}
             <div className="lg:col-span-7 space-y-6 text-start">
-              
+
               {/* Official Badge - Quiet text kicker */}
               <div className="flex items-center gap-2 text-xs font-semibold text-sky-700">
                 <span className="flex h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
@@ -50,10 +50,10 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
               {/* Main Headline */}
               <div className="space-y-3">
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl leading-tight">
-                  {lang === 'ar' ? 'متجر تطبيقات كيان' : 'Kayan Store'}
+                  {lang === 'ar' ? 'منصة كيان الرقمية' : 'Kayan Digital Platform'}
                 </h1>
                 <p className="text-xl font-semibold text-sky-600">
-                  {lang === 'ar' ? '«تطبيقات كيان في مكان واحد»' : '"Kayan Applications in One Place"'}
+                  {lang === 'ar' ? '«اكتشف التطبيقات والبرامج والمنتجات الرقمية وأدوات الذكاء الاصطناعي في مكان واحد.»' : '"Discover apps, software, digital products, and AI tools in one place."'}
                 </p>
               </div>
 
@@ -85,7 +85,7 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
                   className="flex items-center gap-2 rounded-xl bg-sky-600 px-6 py-3.5 text-sm font-bold text-white shadow-sm hover:bg-sky-500 transition-all active:scale-98"
                 >
                   <Download className="h-4 w-4" />
-                  <span>{t('hero.btnBrowse')}</span>
+                  <span>{lang === 'ar' ? 'استعرض المنصة' : 'Explore Platform'}</span>
                 </button>
 
                 {featuredApp && (
@@ -93,7 +93,7 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
                     onClick={() => onNavigate(`/apps/${featuredApp.slug}`)}
                     className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                   >
-                    <span>{t('hero.btnLatest')}</span>
+                    <span>{lang === 'ar' ? 'استكشف التطبيقات' : 'Explore Apps'}</span>
                     {dir === 'rtl' ? <ArrowLeft className="h-4 w-4 text-slate-400" /> : <ArrowRight className="h-4 w-4 text-slate-400" />}
                   </button>
                 )}
@@ -192,7 +192,7 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/50 p-6 sm:p-10 shadow-sm text-start">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-center">
-              
+
               <div className="lg:col-span-4 flex flex-col items-center sm:items-start text-center sm:text-start space-y-4">
                 <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white p-3.5 shadow-md border border-slate-100">
                   <img

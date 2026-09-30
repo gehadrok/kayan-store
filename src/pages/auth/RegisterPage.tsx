@@ -1,0 +1,163 @@
+import React, { useState } from 'react';
+import { useUserAuth } from '../../context/UserAuthContext.tsx';
+import { Lock, Mail, User as UserIcon, AlertCircle, UserPlus } from 'lucide-react';
+
+interface RegisterPageProps {
+  onNavigate?: (path: string) => void;
+}
+
+export const RegisterPage: React.FC<RegisterPageProps> = ({ onNavigate }) => {
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const { login } = useUserAuth();
+
+  const handleNav = (path: string) => {
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new Event('popstate'));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError('كلمتا المرور غير متطابقتين');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('كلمة المرور يجب أن لا تقل عن 6 أحرف');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName, email, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'فشل إنشاء الحساب. يرجى مراجعة البيانات المدخلة');
+        return;
+      }
+
+      login(data.token, data.user);
+      handleNav('/account');
+    } catch (err: any) {
+      setError('حدث خطأ بالاتصال بالخادم. يرجى المحاولة لاحقاً');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
+      <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl border border-slate-100 text-start">
+        <div className="mb-6 text-center">
+          <div className="h-12 w-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center mx-auto mb-3">
+            <UserPlus className="h-6 w-6" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-900">إنشاء حساب جديد</h1>
+          <p className="text-xs text-slate-500 mt-1">انضم إلى متجر كيان واستمتع بالوصول المباشر لمكتبتك الرقمية ومشاريع الذكاء الاصطناعي</p>
+        </div>
+
+        {error && (
+          <div className="mb-6 rounded-2xl bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div className="space-y-1">
+            <label className="font-bold text-slate-700">الاسم الكامل / اسم العرض *</label>
+            <div className="relative">
+              <input
+                type="text"
+                required
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="جهاد الصليحي"
+                className="w-full rounded-xl border border-slate-200 p-3 ps-10 bg-white font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-hidden"
+              />
+              <UserIcon className="h-4 w-4 text-slate-400 absolute start-3 top-3.5" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-bold text-slate-700">البريد الإلكتروني *</label>
+            <div className="relative">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                className="w-full rounded-xl border border-slate-200 p-3 ps-10 bg-white font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-hidden"
+              />
+              <Mail className="h-4 w-4 text-slate-400 absolute start-3 top-3.5" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-bold text-slate-700">كلمة المرور *</label>
+            <div className="relative">
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-slate-200 p-3 ps-10 bg-white font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-hidden"
+              />
+              <Lock className="h-4 w-4 text-slate-400 absolute start-3 top-3.5" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-bold text-slate-700">تأكيد كلمة المرور *</label>
+            <div className="relative">
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-slate-200 p-3 ps-10 bg-white font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-hidden"
+              />
+              <Lock className="h-4 w-4 text-slate-400 absolute start-3 top-3.5" />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-xl bg-sky-600 py-3 text-xs font-bold text-white hover:bg-sky-500 shadow-md shadow-sky-600/20 transition-all disabled:opacity-50 mt-2"
+          >
+            {submitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب جديد'}
+          </button>
+        </form>
+
+        <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
+          لديك حساب بالفعل؟{' '}
+          <button onClick={() => handleNav('/login')} className="font-bold text-sky-600 hover:text-sky-700">
+            تسجيل الدخول
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

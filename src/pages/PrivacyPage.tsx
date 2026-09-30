@@ -7,7 +7,7 @@ export const PrivacyPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-10 text-start">
-      
+
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 mb-1">
@@ -63,7 +63,7 @@ export const PrivacyPage: React.FC = () => {
 
       {/* Main Privacy Body */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6 text-sm leading-relaxed text-slate-700 shadow-sm">
-        
+
         <section className="space-y-2">
           <h2 className="text-base font-bold text-slate-900">
             {lang === 'ar' ? '1. التزامنا تجاه الخصوصية' : '1. Our Privacy Commitment'}

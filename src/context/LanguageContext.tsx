@@ -12,12 +12,13 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   ar: {
     // Navigation & Brand
-    'brand.name': 'متجر كيان',
-    'brand.nameEn': 'Kayan Store',
-    'brand.subtitle': 'تطبيقات كيان في مكان واحد',
+    'brand.name': 'كيان',
+    'brand.nameEn': 'Kayan',
+    'brand.subtitle': 'المنصة الرقمية من كيان سوفت',
     'nav.home': 'الرئيسية',
+    'nav.products': 'المنتجات الرقمية',
     'nav.apps': 'التطبيقات',
-    'nav.about': 'عن المتجر',
+    'nav.about': 'عن كيان',
     'nav.privacy': 'الخصوصية',
     'nav.terms': 'الشروط والأحكام',
     'nav.licenses': 'التراخيص',
@@ -25,11 +26,11 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.adminPortal': 'بوابة المسؤول',
 
     // Hero
-    'hero.title': 'متجر تطبيقات كيان',
-    'hero.slogan': 'تطبيقات كيان في مكان واحد',
-    'hero.description': 'المنصة الرسمية المعتمدة لتحميل وتحديث تطبيقات كيان سوفت برئاسة المهندس جهاد الصليحي. حزم APK مباشرة وموثوقة ومعالجة محلية بدون تتبع.',
-    'hero.btnBrowse': 'استعرض التطبيقات',
-    'hero.btnLatest': 'أحدث الإصدارات',
+    'hero.title': 'منصة كيان الرقمية',
+    'hero.slogan': 'اكتشف التطبيقات والبرامج والمنتجات الرقمية وأدوات الذكاء الاصطناعي في مكان واحد.',
+    'hero.description': 'منصة كيان الرقمية تجمع التطبيقات والبرامج والمنتجات الرقمية وأدوات الذكاء الاصطناعي في تجربة واحدة.',
+    'hero.btnBrowse': 'استعرض المنصة',
+    'hero.btnLatest': 'استكشف التطبيقات',
     'hero.verifiedApks': 'حزم APK موثقة بـ SHA-256',
     'hero.independent': 'توزيع مباشر مستقل عن متجر Google Play',
 
@@ -38,9 +39,9 @@ const translations: Record<Language, Record<string, string>> = {
     'section.featuredDesc': 'أحدث وأبرز تطبيقات كيان سوفت المتاحة للتحميل الفوري.',
     'section.latestReleases': 'أحدث الإصدارات المتاحة',
     'section.latestReleasesDesc': 'تحديثات مستمرة لضمان أعلى مستويات الأداء والأمان على هاتفك.',
-    'section.categories': 'أقسام التطبيقات',
+    'section.categories': 'أقسام المنصة',
     'section.categoriesDesc': 'استكشف مجموعة أدوات كيان المصممة خصيصاً للإنتاجية والعمل اليومي.',
-    'section.whyKayan': 'لماذا متجر كيان؟',
+    'section.whyKayan': 'لماذا منصة كيان؟',
     'section.whyKayanDesc': 'مبادئ راسخة في الخصوصية، المعالجة دون إنترنت، والشفافية الكاملة.',
 
     // Categories
@@ -129,7 +130,7 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.lastUpdated': 'آخر تحديث: سبتمبر 2026',
 
     // Footer
-    'footer.description': 'متجر كيان هو الواجهة الرسمية المعتمدة لتحميل وتحديث حزم تطبيقات أندرويد الصادرة عن كيان سوفت.',
+    'footer.description': 'كيان منصة رقمية متكاملة تجمع التطبيقات والبرامج والمنتجات الرقمية وأدوات الذكاء الاصطناعي في مكان واحد.',
     'footer.quickLinks': 'روابط سريعة',
     'footer.legal': 'المعلومات القانونية',
     'footer.contact': 'معلومات المطور',
@@ -147,12 +148,13 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // Navigation & Brand
-    'brand.name': 'Kayan Store',
-    'brand.nameEn': 'Kayan Store',
-    'brand.subtitle': 'Kayan Applications in One Place',
+    'brand.name': 'Kayan',
+    'brand.nameEn': 'Kayan',
+    'brand.subtitle': 'Digital Platform by Kayan Soft',
     'nav.home': 'Home',
+    'nav.products': 'Digital Products',
     'nav.apps': 'Applications',
-    'nav.about': 'About',
+    'nav.about': 'About Kayan',
     'nav.privacy': 'Privacy',
     'nav.terms': 'Terms',
     'nav.licenses': 'Licenses',
@@ -160,11 +162,11 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.adminPortal': 'Admin Portal',
 
     // Hero
-    'hero.title': 'Kayan Store',
-    'hero.slogan': 'Kayan Applications in One Place',
-    'hero.description': 'The official application distribution website for Kayan Soft, engineered by Jehad Al-Solihy. Verified direct APK downloads with 100% offline local processing.',
-    'hero.btnBrowse': 'Browse Applications',
-    'hero.btnLatest': 'Latest Releases',
+    'hero.title': 'Kayan Digital Platform',
+    'hero.slogan': 'Discover apps, software, digital products, and AI tools in one place.',
+    'hero.description': 'Kayan digital platform brings together applications, software, digital products, and artificial intelligence tools in one unified experience.',
+    'hero.btnBrowse': 'Explore Platform',
+    'hero.btnLatest': 'Explore Apps',
     'hero.verifiedApks': 'SHA-256 Verified APKs',
     'hero.independent': 'Direct distribution independent of Google Play',
 
@@ -173,9 +175,9 @@ const translations: Record<Language, Record<string, string>> = {
     'section.featuredDesc': 'Our flagship offline-first utility ready for instant download.',
     'section.latestReleases': 'Latest Available Releases',
     'section.latestReleasesDesc': 'Continuous updates to ensure peak performance and uncompromising security.',
-    'section.categories': 'App Categories',
-    'section.categoriesDesc': 'Explore tailored utilities designed for day-to-day productivity.',
-    'section.whyKayan': 'Why Kayan Store?',
+    'section.categories': 'Platform Categories',
+    'section.categoriesDesc': 'Explore tailored utilities and digital products designed for productivity.',
+    'section.whyKayan': 'Why Kayan Platform?',
     'section.whyKayanDesc': 'Unwavering commitment to offline privacy, package integrity, and transparency.',
 
     // Categories
@@ -264,7 +266,7 @@ const translations: Record<Language, Record<string, string>> = {
     'legal.lastUpdated': 'Last updated: September 2026',
 
     // Footer
-    'footer.description': 'Kayan Store is the official direct distribution platform for Android application packages created by Kayan Soft.',
+    'footer.description': 'Kayan is a comprehensive digital platform bringing together applications, software, digital products, and AI tools in one place.',
     'footer.quickLinks': 'Quick Links',
     'footer.legal': 'Legal Information',
     'footer.contact': 'Developer Contact',

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { Application, Release, Screenshot } from '../types.ts';
-import { 
-  Download, ShieldCheck, Copy, Check, Smartphone, 
-  Hash, Calendar, Layers, HardDrive, ArrowLeft, 
-  ArrowRight, FileText, CheckCircle2, ChevronRight, 
-  Info, ExternalLink, AlertTriangle 
+import {
+  Download, ShieldCheck, Copy, Check, Smartphone,
+  Hash, Calendar, Layers, HardDrive, ArrowLeft,
+  ArrowRight, FileText, CheckCircle2, ChevronRight,
+  Info, ExternalLink, AlertTriangle
 } from 'lucide-react';
 import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../utils/assets.ts';
 
@@ -93,7 +93,7 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10 space-y-10 text-start">
-      
+
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-xs text-slate-500">
         <button onClick={() => onNavigate('/')} className="hover:text-slate-900 transition-colors">
@@ -109,9 +109,9 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
 
       {/* Main Header / App Hero Showcase */}
       <div className="relative rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        
+
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-          
+
           {/* App Identity */}
           <div className="flex items-start gap-5">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-slate-50 p-2.5 border border-slate-100 shadow-xs">
@@ -222,12 +222,12 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
       {app.bannerUrl && (
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm">
           <img
-            src={getSafeAssetUrl(app.bannerUrl, KAYAN_PDF_BANNER)}
+            src={getSafeAssetUrl(app.bannerUrl, '')}
             alt={`${name} feature graphic`}
             referrerPolicy="no-referrer"
             className="w-full max-h-96 object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = KAYAN_PDF_BANNER;
+              (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
         </div>
@@ -235,7 +235,7 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
 
       {/* Grid: Description & Key Features */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Left/Start Column: Full Description (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-4 shadow-sm">
@@ -319,7 +319,7 @@ export const AppDetailsPage: React.FC<AppDetailsPageProps> = ({
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {screenshots.map((ss) => (
-              <div 
+              <div
                 key={ss.id}
                 onClick={() => setSelectedScreenshot(getSafeAssetUrl(ss.url, KAYAN_PDF_BANNER))}
                 className="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm transition-all hover:border-sky-300"

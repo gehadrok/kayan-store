@@ -71,7 +71,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({ apps, onNavigate, onDo
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8 text-start">
-      
+
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-sky-600 mb-1">

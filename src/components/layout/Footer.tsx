@@ -13,18 +13,23 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     <footer className="border-t border-slate-200/80 bg-slate-900 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
-          
+
           {/* Col 1: Brand & Identity (5 cols) */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500 text-white">
                 <Layers className="h-4 w-4" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">
-                {lang === 'ar' ? 'متجر كيان' : 'Kayan Store'}
-              </span>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight text-white">
+                  {lang === 'ar' ? 'كيان | Kayan' : 'Kayan'}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {lang === 'ar' ? 'المنصة الرقمية من كيان سوفت' : 'Digital Platform by Kayan Soft'}
+                </span>
+              </div>
             </div>
-            
+
             <p className="text-sm leading-relaxed text-slate-400 max-w-sm">
               {t('footer.description')}
             </p>

@@ -11,7 +11,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-12 text-start">
-      
+
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-sky-700 mb-1">
@@ -29,7 +29,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
       {/* Profile & Developer Card */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-          
+
           <div className="md:col-span-4 flex flex-col items-center sm:items-start text-center sm:text-start space-y-3">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md">
               <User className="h-10 w-10" />
@@ -81,8 +81,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
           </h3>
           <p>
             {lang === 'ar'
-              ? 'تأسس متجر كيان (Kayan Store) ليكون القناة الرسمية والمباشرة لتوزيع تطبيقات كيان سوفت على نظام أندرويد. نركز على بناء أدوات مكتبية وتطبيقية عالية الكفاءة تعمل بمبدأ المعالجة غير المتصلة (Offline Processing) دون فرض تسجيل حسابات أو تتبع نشاط المستخدمين.'
-              : 'Kayan Store was established as the official direct distribution platform for Kayan Soft Android applications. We focus on engineering high-efficiency document and utility tools built around local offline processing.'}
+              ? 'كيان منصة رقمية من Kayan Soft تجمع التطبيقات والبرامج والمنتجات الرقمية وأدوات الذكاء الاصطناعي في تجربة واحدة.'
+              : 'Kayan is a digital platform by Kayan Soft bringing together applications, software, digital products, and AI tools in one unified experience.'}
           </p>
           <p>
             {lang === 'ar'
