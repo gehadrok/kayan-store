@@ -206,7 +206,7 @@ export const AIComposer: React.FC<AIComposerProps> = ({
         const rawMessage = data.message || '';
 
         if (res.status === 401) {
-          setErrorMsg('يجب تسجيل الدخول لاستخدام خدمات Kayan AI');
+          setErrorMsg('جلسة المستخدم منتهية أو غير صالحة. يرجى تسجيل الدخول مجدداً (401).');
           return;
         }
         if (res.status === 403) {
@@ -214,11 +214,11 @@ export const AIComposer: React.FC<AIComposerProps> = ({
           return;
         }
         if (res.status === 429 || errType === 'AI_RATE_LIMITED' || errType === 'AI_QUOTA_EXCEEDED' || rawMessage.includes('Limit') || rawMessage.includes('Quota')) {
-          setErrorMsg("تم تجاوز حد استخدام خدمة الذكاء الاصطناعي حاليًا. يرجى المحاولة مرة أخرى لاحقًا.");
+          setErrorMsg("تم تجاوز حد الاستخدام أو تجاوز الحصة المسموحة للذكاء الاصطناعي (429).");
           return;
         }
-        if (res.status === 503 || errType === 'AI_PROVIDER_UNAVAILABLE') {
-          setErrorMsg("خدمة الذكاء الاصطناعي غير متاحة حاليًا. يرجى المحاولة لاحقًا.");
+        if (res.status === 503 || errType === 'AI_PROVIDER_UNAVAILABLE' || errType === 'SERVICE_UNAVAILABLE') {
+          setErrorMsg("خادم قاعدة البيانات أو خدمة الذكاء الاصطناعي غير متاحة مؤقتاً (503).");
           return;
         }
         if (errType === 'AI_PROVIDER_NOT_CONFIGURED') {

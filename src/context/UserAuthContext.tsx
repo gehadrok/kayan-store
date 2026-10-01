@@ -5,7 +5,7 @@ interface UserAuthContextType {
   user: User | null;
   loading: boolean;
   token: string | null;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: User) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -71,6 +71,16 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = await fetch('/api/auth/me', {
         headers: { 'Accept': 'application/json' }
       });
+      if (res.status === 401) {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('kayan_user_token');
+        return;
+      }
+
+      if (!res.ok) {
+        return;
+      }
       const data = await res.json();
       if (data.authenticated && data.user) {
         setUser(data.user);
@@ -80,9 +90,7 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.removeItem('kayan_user_token');
       }
     } catch (err) {
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('kayan_user_token');
+      console.error('Failed to refresh user session:', err);
     } finally {
       setLoading(false);
     }
@@ -92,10 +100,12 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshUser();
   }, []);
 
-  const login = (newToken: string, userData: User) => {
+  const login = async (newToken: string, userData: User) => {
     localStorage.setItem('kayan_user_token', newToken);
     setToken(newToken);
     setUser(userData);
+    // Verify session via /api/auth/me immediately after login
+    await refreshUser();
   };
 
   const logout = async () => {

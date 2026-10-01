@@ -173,11 +173,13 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
         setSelectedProjectId(data.project.id);
         setActiveTab('generate');
         return data.project;
+      } else {
+        throw new Error(data.error || data.message || 'فشل في إنشاء المشروع من الخادم');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating project:', err);
+      throw err;
     }
-    return null;
   };
 
   const handleSelectPromptFromLibrary = (promptText: string, capability: 'TEXT' | 'IMAGE' | 'CODE') => {
