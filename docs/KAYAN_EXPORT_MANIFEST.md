@@ -1,6 +1,6 @@
-# Kayan | كيان — Complete Source Export Manifest (V3)
+# Kayan | كيان — Complete Source Export Manifest (V6)
 
-**Export Package:** `Kayan-Platform-FINAL-SOURCE-V3.zip`
+**Export Package:** `Kayan-Platform-FINAL-SOURCE-V6.zip`
 **Generated Date:** September 30, 2026
 **Auditor / Packager:** Kayan Core Engineering
 **Integrity Status:** VERIFIED & PRODUCTION READY
@@ -11,9 +11,16 @@
 
 ## 1. Package Checksum & Identity
 
-- **Archive File:** `Kayan-Platform-FINAL-SOURCE-V3.zip`
-- **SHA-256 Checksum:** `4f6bf0d51ac10847e3db4e2c9fc31fc494c8025e98769fb2d9c9035a6dd2e5e2`
-- **Supersedes:** `Kayan-Platform-FINAL-SOURCE-V2.zip` and `Kayan-Platform-FINAL-SOURCE.zip`.
+- **Archive File:** `Kayan-Platform-FINAL-SOURCE-V6.zip`
+- **Checksum File:** `Kayan-Platform-FINAL-SOURCE-V6.zip.sha256` (Detached Checksum)
+- **Supersedes:** `Kayan-Platform-FINAL-SOURCE-V5.zip`, `Kayan-Platform-FINAL-SOURCE-V4.zip`, `Kayan-Platform-FINAL-SOURCE-V3.zip`, `Kayan-Platform-FINAL-SOURCE-V2.zip`, and `Kayan-Platform-FINAL-SOURCE.zip`.
+
+### Checksum Methodology (Non-Circular)
+To ensure absolute integrity and avoid circular dependency, the SHA-256 checksum is NOT embedded within the manifest file itself.
+1. The archive `Kayan-Platform-FINAL-SOURCE-V6.zip` is generated.
+2. The SHA-256 hash of the *entire* `Kayan-Platform-FINAL-SOURCE-V6.zip` file is calculated.
+3. The resulting hash is written to a detached file: `Kayan-Platform-FINAL-SOURCE-V6.zip.sha256`.
+4. Verification: Run `sha256sum -c Kayan-Platform-FINAL-SOURCE-V6.zip.sha256` to independently verify the archive's integrity.
 
 ---
 

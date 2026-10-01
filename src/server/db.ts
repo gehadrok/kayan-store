@@ -429,6 +429,9 @@ class PostgresOrJsonDatabase {
   private pool: pkg.Pool | null = null;
   private jsonData: DatabaseSchema | null = null;
   private isPg: boolean = false;
+  private initialized: boolean = false;
+
+  public isInitialized(): boolean { return this.initialized; }
 
   private getJsonData(): DatabaseSchema {
     if (!this.jsonData) {
@@ -483,6 +486,7 @@ class PostgresOrJsonDatabase {
       this.jsonData = this.loadJson();
       this.syncAdminEnvCredentialsJson();
     }
+    this.initialized = true;
   }
 
   private async initPgTables() {

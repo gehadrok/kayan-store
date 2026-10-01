@@ -4,7 +4,8 @@ import crypto from 'crypto';
 import AdmZip from 'adm-zip';
 
 const ROOT_DIR = process.cwd();
-const OUTPUT_ZIP_PATH = path.join(ROOT_DIR, 'Kayan-Platform-FINAL-SOURCE-V4.zip');
+const OUTPUT_ZIP_PATH = path.join(ROOT_DIR, 'Kayan-Platform-FINAL-SOURCE-V6.zip');
+const CHECKSUM_FILE_PATH = OUTPUT_ZIP_PATH + '.sha256';
 
 const EXCLUDED_DIRS = new Set([
   'node_modules',
@@ -21,7 +22,10 @@ const EXCLUDED_FILES = new Set([
   'Kayan-Platform-FINAL-SOURCE.zip',
   'Kayan-Platform-FINAL-SOURCE-V2.zip',
   'Kayan-Platform-FINAL-SOURCE-V3.zip',
-  'Kayan-Platform-FINAL-SOURCE-V4.zip'
+  'Kayan-Platform-FINAL-SOURCE-V4.zip',
+  'Kayan-Platform-FINAL-SOURCE-V5.zip',
+  'Kayan-Platform-FINAL-SOURCE-V6.zip',
+  'Kayan-Platform-FINAL-SOURCE-V6.zip.sha256'
 ]);
 
 function shouldInclude(relPath: string): boolean {
@@ -88,8 +92,10 @@ async function packageSource() {
   const stats = fs.statSync(OUTPUT_ZIP_PATH);
   const zipBuffer = fs.readFileSync(OUTPUT_ZIP_PATH);
   const sha256 = crypto.createHash('sha256').update(zipBuffer).digest('hex');
+  fs.writeFileSync(CHECKSUM_FILE_PATH, sha256);
 
   console.log('4. Verifying package integrity...');
+  console.log(`   Checksum saved to: ${CHECKSUM_FILE_PATH}`);
   const verifyZip = new AdmZip(OUTPUT_ZIP_PATH);
   const entries = verifyZip.getEntries();
   console.log(`   Total entries inside ZIP: ${entries.length}`);

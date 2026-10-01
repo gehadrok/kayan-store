@@ -114,8 +114,18 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    environment: IS_PROD ? 'production' : 'development'
+    environment: IS_PROD ? 'production' : 'development',
+    dbReady: db.isInitialized()
   });
+});
+
+// Database Readiness Middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api/health')) return next();
+  if (!db.isInitialized()) {
+    return res.status(503).json({ success: false, error: 'SERVICE_UNAVAILABLE', message: 'Database is still initializing. Please try again later.' });
+  }
+  next();
 });
 
 // ==========================================
@@ -2379,13 +2389,17 @@ app.get('/api/admin/ai/user-keys', requireAdmin, async (req: Request, res: Respo
 // VITE OR STATIC SERVE
 // ==========================================
 async function startServer() {
-  try {
-    console.log('🚀 Initializing database...');
-    await db.initialize();
-  } catch (err: any) {
-    console.error('❌ Critical database initialization error:', err?.message || err);
-    process.exit(1);
-  }
+  // Start HTTP server immediately
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Kayan Store server listening on port ${PORT} (http://localhost:${PORT})`);
+  });
+
+  // Asynchronously initialize database
+  db.initialize().then(() => {
+    console.log('✅ Database initialized successfully');
+  }).catch(err => {
+    console.error('❌ Database initialization error:', err?.message || err);
+  });
 
   if (!IS_PROD) {
     const { createServer: createViteServer } = await import('vite');
@@ -2416,10 +2430,6 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Kayan Store server listening on port ${PORT} (http://localhost:${PORT})`);
-  });
 }
 
 startServer();
