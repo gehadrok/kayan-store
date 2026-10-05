@@ -5,7 +5,7 @@ interface UserAuthContextType {
   user: User | null;
   loading: boolean;
   token: string | null;
-  login: (token: string, user: User) => Promise<void>;
+  login: (token: string, user: User) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -71,14 +71,10 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const res = await fetch('/api/auth/me', {
         headers: { 'Accept': 'application/json' }
       });
-      if (res.status === 401) {
+      if (res.status === 401 || !res.ok) {
         setUser(null);
         setToken(null);
         localStorage.removeItem('kayan_user_token');
-        return;
-      }
-
-      if (!res.ok) {
         return;
       }
       const data = await res.json();
@@ -90,7 +86,9 @@ export const UserAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         localStorage.removeItem('kayan_user_token');
       }
     } catch (err) {
-      console.error('Failed to refresh user session:', err);
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('kayan_user_token');
     } finally {
       setLoading(false);
     }
@@ -134,3 +132,4 @@ export const useUserAuth = () => {
   }
   return context;
 };
+

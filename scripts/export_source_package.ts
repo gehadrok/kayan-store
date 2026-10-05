@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import AdmZip from 'adm-zip';
 
 const ROOT_DIR = process.cwd();
-const OUTPUT_ZIP_PATH = path.join(ROOT_DIR, 'Kayan-Platform-FINAL-SOURCE-V7.zip');
+const OUTPUT_ZIP_PATH = path.join(ROOT_DIR, 'Kayan-Platform-FINAL-SOURCE-V8.zip');
 const CHECKSUM_FILE_PATH = OUTPUT_ZIP_PATH + '.sha256';
 
 const EXCLUDED_DIRS = new Set([
@@ -27,7 +27,9 @@ const EXCLUDED_FILES = new Set([
   'Kayan-Platform-FINAL-SOURCE-V6.zip',
   'Kayan-Platform-FINAL-SOURCE-V6.zip.sha256',
   'Kayan-Platform-FINAL-SOURCE-V7.zip',
-  'Kayan-Platform-FINAL-SOURCE-V7.zip.sha256'
+  'Kayan-Platform-FINAL-SOURCE-V7.zip.sha256',
+  'Kayan-Platform-FINAL-SOURCE-V8.zip',
+  'Kayan-Platform-FINAL-SOURCE-V8.zip.sha256'
 ]);
 
 function shouldInclude(relPath: string): boolean {

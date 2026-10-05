@@ -31,13 +31,13 @@ async function runTests() {
     const providers = await db.getAIProviders();
     const gemini = providers.find(p => p.id === 'gemini');
     if (!gemini) throw new Error('Gemini provider missing');
-
+    
     const originalName = gemini.displayName;
     await db.updateAIProviderDetails('gemini', { displayName: 'Google Gemini Pro' });
-
+    
     const updated = await db.getAIProviderById('gemini');
     if (updated?.displayName !== 'Google Gemini Pro') throw new Error('Update failed');
-
+    
     // Restore
     await db.updateAIProviderDetails('gemini', { displayName: originalName });
   });
@@ -46,12 +46,12 @@ async function runTests() {
   await test('Global Routing Policy Update', async () => {
     const original = await db.getAISettings();
     await db.updateAISettings({ routingMode: 'FREE_FIRST', allowPaidFallback: true });
-
+    
     const updated = await db.getAISettings();
     if (updated.routingMode !== 'FREE_FIRST' || updated.allowPaidFallback !== true) {
       throw new Error('Settings update failed');
     }
-
+    
     // Restore
     await db.updateAISettings(original);
   });
@@ -73,11 +73,11 @@ async function runTests() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
-
+    
     const models = await db.getAIModels();
     const found = models.find(m => m.modelId === newModelId);
     if (!found) throw new Error('Model creation failed');
-
+    
     await db.deleteAIModel(found.id);
     const deletedModels = await db.getAIModels();
     if (deletedModels.find(m => m.modelId === newModelId)) throw new Error('Model deletion failed');

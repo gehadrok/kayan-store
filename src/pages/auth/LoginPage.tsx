@@ -41,7 +41,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         return;
       }
 
-      await login(data.token, data.user);
+      login(data.token, data.user);
       handleNav('/account');
     } catch (err: any) {
       setError('حدث خطأ بالاتصال بالخادم. يرجى المحاولة لاحقاً');

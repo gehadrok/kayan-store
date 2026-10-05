@@ -18,8 +18,11 @@ import { registerVisionRoutes } from './src/server/ai/visionRoutes.ts';
 import { registerAppBuilderRoutes } from './src/server/ai/appBuilderRoutes.ts';
 import { registerPreviewRoutes } from './src/server/ai/previewRoutes.ts';
 import { registerExportRoutes } from './src/server/ai/exportRoutes.ts';
-import { registerBuildRoutes } from './src/server/build/buildRoutes.ts';
 import { MODEL_CAPABILITY_MAPPING } from './src/server/ai/constants.ts';
+import { NewsEngine } from './src/server/newsEngine.ts';
+import { setupNewsApi } from './src/server/newsApiHandler.ts';
+import { registerCVRoutes } from './src/server/cv/cvRoutes.ts';
+import { registerBuildRoutes } from './src/server/build/buildRoutes.ts';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -30,6 +33,9 @@ const STORAGE_DRIVER = process.env.STORAGE_DRIVER || (IS_PROD ? 'github' : 'loca
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+const newsEngine = new NewsEngine(db);
+setupNewsApi(app, db, newsEngine, requireAdmin);
 
 // Static directories
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads', 'apks');
@@ -90,17 +96,17 @@ const upload = multer({
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies.kayan_admin_session || req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
-    return res.status(401).json({ success: false, error: 'غير مصرح لك بالوصول. يرجى تسجيل الدخول كمسؤول.' });
+    return res.status(401).json({ success: false, error: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„. ظٹط±ط¬ظ‰ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ظƒظ…ط³ط¤ظˆظ„.' });
   }
 
   const session = await db.getSession(token);
   if (!session) {
-    return res.status(401).json({ success: false, error: 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مجدداً.' });
+    return res.status(401).json({ success: false, error: 'ط§ظ†طھظ‡طھ طµظ„ط§ط­ظٹط© ط§ظ„ط¬ظ„ط³ط©. ظٹط±ط¬ظ‰ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ظ…ط¬ط¯ط¯ط§ظ‹.' });
   }
 
   const admin = await db.getAdminById(session.adminId);
   if (!admin) {
-    return res.status(401).json({ success: false, error: 'المستخدم غير موجود.' });
+    return res.status(401).json({ success: false, error: 'ط§ظ„ظ…ط³طھط®ط¯ظ… ط؛ظٹط± ظ…ظˆط¬ظˆط¯.' });
   }
 
   (req as any).admin = admin;
@@ -129,6 +135,130 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // ==========================================
+// STORE ANNOUNCEMENTS / PROMOTIONS API
+// ==========================================
+
+// Get active public announcements with ticker speed and height settings
+app.get('/api/announcements', async (req: Request, res: Response) => {
+  try {
+    const [announcements, tickerSettings] = await Promise.all([
+      db.getAnnouncements(true),
+      db.getTickerSettings()
+    ]);
+    res.json({
+      success: true,
+      announcements,
+      tickerSpeed: tickerSettings.speed,
+      tickerHeight: tickerSettings.height
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ط¥ط¹ظ„ط§ظ†ط§طھ ظˆط§ظ„ط¹ط±ظˆط¶' });
+  }
+});
+
+// Public: Get ticker settings
+app.get('/api/ticker-settings', async (req: Request, res: Response) => {
+  try {
+    const settings = await db.getTickerSettings();
+    res.json({ success: true, tickerSpeed: settings.speed, tickerHeight: settings.height });
+  } catch {
+    res.json({ success: true, tickerSpeed: 35, tickerHeight: 40 });
+  }
+});
+
+// Admin: Update ticker speed and height setting
+app.put('/api/admin/ticker-settings', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { speed, height } = req.body;
+    const settings = await db.updateTickerSettings(
+      typeof speed === 'number' ? speed : 35,
+      typeof height === 'number' ? height : 40
+    );
+    res.json({
+      success: true,
+      tickerSpeed: settings.speed,
+      tickerHeight: settings.height,
+      message: 'طھظ… طھط­ط¯ظٹط« ط¥ط¹ط¯ط§ط¯ط§طھ ط´ط±ظٹط· ط§ظ„ط£ط®ط¨ط§ط± ط¨ظ†ط¬ط§ط­'
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط¯ظٹط« ط¥ط¹ط¯ط§ط¯ط§طھ ط´ط±ظٹط· ط§ظ„ط£ط®ط¨ط§ط±' });
+  }
+});
+
+// Admin: Get all announcements
+app.get('/api/admin/announcements', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const announcements = await db.getAnnouncements(false);
+    res.json({ success: true, announcements });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط¥ط¯ط§ط±ط© ط§ظ„ط¥ط¹ظ„ط§ظ†ط§طھ' });
+  }
+});
+
+// Admin: Create announcement
+app.post('/api/admin/announcements', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const admin = (req as any).admin;
+    const { title, message, type, icon, link, productId, startAt, endAt, priority, displayOrder, active, dismissible } = req.body;
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ success: false, error: 'ط¹ظ†ظˆط§ظ† ط§ظ„ط¥ط¹ظ„ط§ظ† ظ…ط·ظ„ظˆط¨' });
+    }
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ success: false, error: 'ظ…ط­طھظˆظ‰ ط§ظ„ط¥ط¹ظ„ط§ظ† ظ…ط·ظ„ظˆط¨' });
+    }
+
+    const announcement = await db.createAnnouncement({
+      title: title.trim(),
+      message: message.trim(),
+      type: type || 'info',
+      icon: icon ? String(icon).trim() : undefined,
+      link: link ? String(link).trim() : undefined,
+      productId: productId ? String(productId).trim() : undefined,
+      startAt: startAt || new Date().toISOString(),
+      endAt: endAt || new Date(Date.now() + 86400000 * 30).toISOString(),
+      priority: typeof priority === 'number' ? priority : parseInt(priority, 10) || 0,
+      displayOrder: typeof displayOrder === 'number' ? displayOrder : parseInt(displayOrder, 10) || 0,
+      active: active !== false,
+      dismissible: dismissible !== false
+    }, admin.username);
+
+    res.status(201).json({ success: true, announcement });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¥ظ†ط´ط§ط، ط§ظ„ط¥ط¹ظ„ط§ظ†' });
+  }
+});
+
+// Admin: Update announcement
+app.put('/api/admin/announcements/:id', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const admin = (req as any).admin;
+    const { id } = req.params;
+    const updated = await db.updateAnnouncement(id, req.body, admin.username);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'ط§ظ„ط¥ط¹ظ„ط§ظ† ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    }
+    res.json({ success: true, announcement: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط¯ظٹط« ط§ظ„ط¥ط¹ظ„ط§ظ†' });
+  }
+});
+
+// Admin: Delete announcement
+app.delete('/api/admin/announcements/:id', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const admin = (req as any).admin;
+    const { id } = req.params;
+    const deleted = await db.deleteAnnouncement(id, admin.username);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'ط§ظ„ط¥ط¹ظ„ط§ظ† ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    }
+    res.json({ success: true, message: 'طھظ… ط­ط°ظپ ط§ظ„ط¥ط¹ظ„ط§ظ† ط¨ظ†ط¬ط§ط­' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط­ط°ظپ ط§ظ„ط¥ط¹ظ„ط§ظ†' });
+  }
+});
+
+// ==========================================
 // PUBLIC API ENDPOINTS
 // ==========================================
 
@@ -151,7 +281,7 @@ app.get('/api/apps/:slug', async (req: Request, res: Response) => {
   const { slug } = req.params;
   const appItem = await db.getApplicationBySlug(slug, true);
   if (!appItem) {
-    return res.status(404).json({ success: false, error: 'التطبيق المطلوب غير موجود أو غير منشور حالياً.' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„طھط·ط¨ظٹظ‚ ط§ظ„ظ…ط·ظ„ظˆط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯ ط£ظˆ ط؛ظٹط± ظ…ظ†ط´ظˆط± ط­ط§ظ„ظٹط§ظ‹.' });
   }
 
   const releases = await db.getReleasesByAppId(appItem.id);
@@ -218,7 +348,7 @@ app.get('/api/products/:slug', async (req: Request, res: Response) => {
   const { slug } = req.params;
   const product = await db.getProductBySlug(slug, true);
   if (!product) {
-    return res.status(404).json({ success: false, error: 'المنتج المطلوب غير موجود أو غير منشور حالياً.' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط§ظ„ظ…ط·ظ„ظˆط¨ ط؛ظٹط± ظ…ظˆط¬ظˆط¯ ط£ظˆ ط؛ظٹط± ظ…ظ†ط´ظˆط± ط­ط§ظ„ظٹط§ظ‹.' });
   }
 
   const media = await db.getMediaByProductId(product.id, true);
@@ -251,7 +381,7 @@ app.get('/api/download/:releaseId', async (req: Request, res: Response) => {
   const { releaseId } = req.params;
   const release = await db.getReleaseById(releaseId);
   if (!release) {
-    return res.status(404).send('Release not found / الملف غير موجود');
+    return res.status(404).send('Release not found / ط§ظ„ظ…ظ„ظپ ط؛ظٹط± ظ…ظˆط¬ظˆط¯');
   }
 
   const appItem = await db.getApplicationById(release.appId);
@@ -417,12 +547,12 @@ async function requireUser(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await getUserFromReq(req);
     if (!user) {
-      return res.status(401).json({ success: false, error: 'يتطلب تسجيل الدخول للوصول إلى هذه الخدمة' });
+      return res.status(401).json({ success: false, error: 'ظٹطھط·ظ„ط¨ طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„ ظ„ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ظ‡ ط§ظ„ط®ط¯ظ…ط©' });
     }
     (req as any).user = user;
     next();
   } catch (err) {
-    res.status(401).json({ success: false, error: 'جلسة المستخدم غير صالحة' });
+    res.status(401).json({ success: false, error: 'ط¬ظ„ط³ط© ط§ظ„ظ…ط³طھط®ط¯ظ… ط؛ظٹط± طµط§ظ„ط­ط©' });
   }
 }
 
@@ -441,7 +571,7 @@ function aiRateLimiter(req: Request, res: Response, next: NextFunction) {
     return res.status(429).json({
       success: false,
       error: 'AI_RATE_LIMITED',
-      message: 'تجاوزت الحد المسموح به من طلبات الذكاء الاصطناعي. يرجى الانتظار دقيقة واحدة.'
+      message: 'طھط¬ط§ظˆط²طھ ط§ظ„ط­ط¯ ط§ظ„ظ…ط³ظ…ظˆط­ ط¨ظ‡ ظ…ظ† ط·ظ„ط¨ط§طھ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ. ظٹط±ط¬ظ‰ ط§ظ„ط§ظ†طھط¸ط§ط± ط¯ظ‚ظٹظ‚ط© ظˆط§ط­ط¯ط©.'
     });
   }
 
@@ -459,19 +589,19 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
     const { email, password, displayName, locale } = req.body;
     if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ success: false, error: 'يرجى إدخال بريد إلكتروني صحيح' });
+      return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ط¨ط±ظٹط¯ ط¥ظ„ظƒطھط±ظˆظ†ظٹ طµط­ظٹط­' });
     }
     if (!password || typeof password !== 'string' || password.length < 6) {
-      return res.status(400).json({ success: false, error: 'كلمة المرور يجب أن لا تقل عن 6 أحرف' });
+      return res.status(400).json({ success: false, error: 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظٹط¬ط¨ ط£ظ† ظ„ط§ طھظ‚ظ„ ط¹ظ† 6 ط£ط­ط±ظپ' });
     }
     if (!displayName || typeof displayName !== 'string' || displayName.trim().length < 2) {
-      return res.status(400).json({ success: false, error: 'الاسم المعروض يجب أن لا يقل عن حرفين' });
+      return res.status(400).json({ success: false, error: 'ط§ظ„ط§ط³ظ… ط§ظ„ظ…ط¹ط±ظˆط¶ ظٹط¬ط¨ ط£ظ† ظ„ط§ ظٹظ‚ظ„ ط¹ظ† ط­ط±ظپظٹظ†' });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const existing = await db.getUserByEmail(normalizedEmail);
     if (existing) {
-      return res.status(409).json({ success: false, error: 'البريد الإلكتروني مسجل بالفعل' });
+      return res.status(409).json({ success: false, error: 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ ظ…ط³ط¬ظ„ ط¨ط§ظ„ظپط¹ظ„' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -500,7 +630,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('Registration error:', err);
-    res.status(500).json({ success: false, error: 'حدث خطأ أثناء إنشاء الحساب' });
+    res.status(500).json({ success: false, error: 'ط­ط¯ط« ط®ط·ط£ ط£ط«ظ†ط§ط، ط¥ظ†ط´ط§ط، ط§ظ„ط­ط³ط§ط¨' });
   }
 });
 
@@ -509,21 +639,21 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' });
+      return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ ظˆظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±' });
     }
 
     const userWithAuth = await db.getUserByEmail(email);
     if (!userWithAuth) {
-      return res.status(401).json({ success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
+      return res.status(401).json({ success: false, error: 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ ط£ظˆ ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط؛ظٹط± طµط­ظٹط­ط©' });
     }
 
     if (userWithAuth.status === 'SUSPENDED') {
-      return res.status(403).json({ success: false, error: 'تم تعليق هذا الحساب مؤقتاً. يرجى التواصل مع الدعم الفني' });
+      return res.status(403).json({ success: false, error: 'طھظ… طھط¹ظ„ظٹظ‚ ظ‡ط°ط§ ط§ظ„ط­ط³ط§ط¨ ظ…ط¤ظ‚طھط§ظ‹. ظٹط±ط¬ظ‰ ط§ظ„طھظˆط§طµظ„ ظ…ط¹ ط§ظ„ط¯ط¹ظ… ط§ظ„ظپظ†ظٹ' });
     }
 
     const passwordValid = await bcrypt.compare(password, userWithAuth.passwordHash);
     if (!passwordValid) {
-      return res.status(401).json({ success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
+      return res.status(401).json({ success: false, error: 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ ط£ظˆ ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط؛ظٹط± طµط­ظٹط­ط©' });
     }
 
     await db.updateUserLastLogin(userWithAuth.id);
@@ -548,7 +678,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('Login error:', err);
-    res.status(500).json({ success: false, error: 'حدث خطأ أثناء تسجيل الدخول' });
+    res.status(500).json({ success: false, error: 'ط­ط¯ط« ط®ط·ط£ ط£ط«ظ†ط§ط، طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„' });
   }
 });
 
@@ -593,7 +723,7 @@ app.get('/api/me/library', requireUser, async (req: Request, res: Response) => {
     const products = await db.getUserLibrary(user.id);
     res.json({ success: true, products });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل المكتبة' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ظ…ظƒطھط¨ط©' });
   }
 });
 
@@ -603,17 +733,17 @@ app.post('/api/products/:productId/claim-free', requireUser, async (req: Request
     const { productId } = req.params;
     const product = await db.getProductById(productId);
     if (!product) {
-      return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
     }
 
     if (product.price > 0) {
-      return res.status(400).json({ success: false, error: 'هذا المنتج مدفوع ويتطلب خيار الشراء' });
+      return res.status(400).json({ success: false, error: 'ظ‡ط°ط§ ط§ظ„ظ…ظ†طھط¬ ظ…ط¯ظپظˆط¹ ظˆظٹطھط·ظ„ط¨ ط®ظٹط§ط± ط§ظ„ط´ط±ط§ط،' });
     }
 
     await db.grantEntitlement(user.id, productId, 'FREE');
-    res.json({ success: true, message: 'تمت إضافة المنتج إلى مكتبتك بنجاح' });
+    res.json({ success: true, message: 'طھظ…طھ ط¥ط¶ط§ظپط© ط§ظ„ظ…ظ†طھط¬ ط¥ظ„ظ‰ ظ…ظƒطھط¨طھظƒ ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في إضافة المنتج إلى المكتبة' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¥ط¶ط§ظپط© ط§ظ„ظ…ظ†طھط¬ ط¥ظ„ظ‰ ط§ظ„ظ…ظƒطھط¨ط©' });
   }
 });
 
@@ -627,7 +757,7 @@ app.get('/api/me/favorites', requireUser, async (req: Request, res: Response) =>
     const favorites = await db.getUserFavorites(user.id);
     res.json({ success: true, favorites });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل المفضلة' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ظ…ظپط¶ظ„ط©' });
   }
 });
 
@@ -636,9 +766,9 @@ app.post('/api/me/favorites/:productId', requireUser, async (req: Request, res: 
     const user = (req as any).user;
     const { productId } = req.params;
     await db.addFavorite(user.id, productId);
-    res.json({ success: true, message: 'تمت الإضافة إلى المفضلة' });
+    res.json({ success: true, message: 'طھظ…طھ ط§ظ„ط¥ط¶ط§ظپط© ط¥ظ„ظ‰ ط§ظ„ظ…ظپط¶ظ„ط©' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في الإضافة للمفضلة' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط§ظ„ط¥ط¶ط§ظپط© ظ„ظ„ظ…ظپط¶ظ„ط©' });
   }
 });
 
@@ -647,9 +777,9 @@ app.delete('/api/me/favorites/:productId', requireUser, async (req: Request, res
     const user = (req as any).user;
     const { productId } = req.params;
     await db.removeFavorite(user.id, productId);
-    res.json({ success: true, message: 'تمت الإزالة من المفضلة' });
+    res.json({ success: true, message: 'طھظ…طھ ط§ظ„ط¥ط²ط§ظ„ط© ظ…ظ† ط§ظ„ظ…ظپط¶ظ„ط©' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في إزالة العنصر من المفضلة' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¥ط²ط§ظ„ط© ط§ظ„ط¹ظ†طµط± ظ…ظ† ط§ظ„ظ…ظپط¶ظ„ط©' });
   }
 });
 
@@ -675,7 +805,7 @@ app.get('/api/products/:productId/reviews', async (req: Request, res: Response) 
     const reviews = await db.getProductReviews(req.params.productId);
     res.json({ success: true, reviews });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل التقييمات' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„طھظ‚ظٹظٹظ…ط§طھ' });
   }
 });
 
@@ -687,17 +817,17 @@ app.post('/api/products/:productId/reviews', requireUser, async (req: Request, r
 
     const parsedRating = parseInt(rating, 10);
     if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
-      return res.status(400).json({ success: false, error: 'التقييم يجب أن يكون بين 1 و 5 نجوماً' });
+      return res.status(400).json({ success: false, error: 'ط§ظ„طھظ‚ظٹظٹظ… ظٹط¬ط¨ ط£ظ† ظٹظƒظˆظ† ط¨ظٹظ† 1 ظˆ 5 ظ†ط¬ظˆظ…ط§ظ‹' });
     }
 
     if (!body || typeof body !== 'string' || body.trim().length < 3) {
-      return res.status(400).json({ success: false, error: 'نص التقييم يجب أن لا يقل عن 3 أحرف' });
+      return res.status(400).json({ success: false, error: 'ظ†طµ ط§ظ„طھظ‚ظٹظٹظ… ظٹط¬ط¨ ط£ظ† ظ„ط§ ظٹظ‚ظ„ ط¹ظ† 3 ط£ط­ط±ظپ' });
     }
 
     await db.createOrUpdateReview(user.id, productId, parsedRating, body.trim(), title ? String(title).trim() : undefined);
-    res.json({ success: true, message: 'تم نشر التقييم بنجاح' });
+    res.json({ success: true, message: 'طھظ… ظ†ط´ط± ط§ظ„طھظ‚ظٹظٹظ… ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في حفظ التقييم' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط­ظپط¸ ط§ظ„طھظ‚ظٹظٹظ…' });
   }
 });
 
@@ -711,7 +841,7 @@ app.get('/api/me/downloads', requireUser, async (req: Request, res: Response) =>
     const downloads = await db.getUserDownloads(user.id);
     res.json({ success: true, downloads });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل سجل التنزيلات' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط³ط¬ظ„ ط§ظ„طھظ†ط²ظٹظ„ط§طھ' });
   }
 });
 
@@ -725,7 +855,7 @@ app.get('/api/me/ai/projects', requireUser, async (req: Request, res: Response) 
     const projects = await db.getUserAIProjects(user.id);
     res.json({ success: true, projects });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل مشاريع الذكاء الاصطناعي' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ظ…ط´ط§ط±ظٹط¹ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ' });
   }
 });
 
@@ -734,13 +864,13 @@ app.post('/api/me/ai/projects', requireUser, async (req: Request, res: Response)
     const user = (req as any).user;
     const { name, description, type } = req.body;
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return res.status(400).json({ success: false, error: 'اسم المشروع يجب أن لا يقل عن حرفين' });
+      return res.status(400).json({ success: false, error: 'ط§ط³ظ… ط§ظ„ظ…ط´ط±ظˆط¹ ظٹط¬ط¨ ط£ظ† ظ„ط§ ظٹظ‚ظ„ ط¹ظ† ط­ط±ظپظٹظ†' });
     }
 
     const project = await db.createAIProject(user.id, name.trim(), description, type || 'GENERAL');
     res.status(201).json({ success: true, project });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في إنشاء المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¥ظ†ط´ط§ط، ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -749,11 +879,11 @@ app.get('/api/me/ai/projects/:id', requireUser, async (req: Request, res: Respon
     const user = (req as any).user;
     const project = await db.getAIProjectById(req.params.id);
     if (!project || project.userId !== user.id) {
-      return res.status(404).json({ success: false, error: 'المشروع غير موجود أو لا تملك صلاحية الوصول إليه' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ط´ط±ظˆط¹ ط؛ظٹط± ظ…ظˆط¬ظˆط¯ ط£ظˆ ظ„ط§ طھظ…ظ„ظƒ طµظ„ط§ط­ظٹط© ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظٹظ‡' });
     }
     res.json({ success: true, project });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل تفاصيل المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ طھظپط§طµظٹظ„ ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -763,11 +893,11 @@ app.put('/api/me/ai/projects/:id', requireUser, async (req: Request, res: Respon
     const { name, description } = req.body;
     const project = await db.updateAIProject(req.params.id, user.id, { name, description });
     if (!project) {
-      return res.status(404).json({ success: false, error: 'المشروع غير موجود أو لا تملك صلاحية التعديل عليه' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ط´ط±ظˆط¹ ط؛ظٹط± ظ…ظˆط¬ظˆط¯ ط£ظˆ ظ„ط§ طھظ…ظ„ظƒ طµظ„ط§ط­ظٹط© ط§ظ„طھط¹ط¯ظٹظ„ ط¹ظ„ظٹظ‡' });
     }
     res.json({ success: true, project });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحديث بيانات المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط¯ظٹط« ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -776,11 +906,11 @@ app.delete('/api/me/ai/projects/:id', requireUser, async (req: Request, res: Res
     const user = (req as any).user;
     const deleted = await db.deleteAIProject(req.params.id, user.id);
     if (!deleted) {
-      return res.status(404).json({ success: false, error: 'المشروع غير موجود أو لا تملك صلاحية الحذف' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ط´ط±ظˆط¹ ط؛ظٹط± ظ…ظˆط¬ظˆط¯ ط£ظˆ ظ„ط§ طھظ…ظ„ظƒ طµظ„ط§ط­ظٹط© ط§ظ„ط­ط°ظپ' });
     }
-    res.json({ success: true, message: 'تم حذف المشروع بنجاح' });
+    res.json({ success: true, message: 'طھظ… ط­ط°ظپ ط§ظ„ظ…ط´ط±ظˆط¹ ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في حذف المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط­ط°ظپ ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -789,12 +919,12 @@ app.get('/api/me/ai/projects/:id/assets', requireUser, async (req: Request, res:
     const user = (req as any).user;
     const project = await db.getAIProjectById(req.params.id);
     if (!project || project.userId !== user.id) {
-      return res.status(404).json({ success: false, error: 'المشروع غير موجود' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ط´ط±ظˆط¹ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
     }
     const assets = await db.getProjectAIAssets(project.id);
     res.json({ success: true, assets });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل أصول الذكاء الاصطناعي' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط£طµظˆظ„ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ' });
   }
 });
 
@@ -816,7 +946,7 @@ app.get('/api/me/ai/keys', requireUser, async (req: Request, res: Response) => {
     }));
     res.json({ success: true, keys: maskedKeys });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل مفاتيح الذكاء الاصطناعي' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ظ…ظپط§طھظٹط­ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ' });
   }
 });
 
@@ -824,20 +954,20 @@ app.post('/api/me/ai/keys', requireUser, async (req: Request, res: Response) => 
   try {
     const user = (req as any).user;
     const { providerId, apiKey } = req.body;
-
+    
     if (!providerId || !apiKey || typeof apiKey !== 'string' || apiKey.trim().length < 8) {
-      return res.status(400).json({ success: false, error: 'يرجى إدخال مفتاح صالح' });
+      return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ظ…ظپطھط§ط­ طµط§ظ„ط­' });
     }
 
     const providers = await db.getAIProviders();
     if (!providers.find(p => p.id === providerId)) {
-      return res.status(400).json({ success: false, error: 'مزود الذكاء الاصطناعي غير مدعوم' });
+      return res.status(400).json({ success: false, error: 'ظ…ط²ظˆط¯ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ ط؛ظٹط± ظ…ط¯ط¹ظˆظ…' });
     }
 
     await db.saveUserKey(user.id, providerId, apiKey.trim());
-    res.json({ success: true, message: 'تم حفظ المفتاح بنجاح' });
+    res.json({ success: true, message: 'طھظ… ط­ظپط¸ ط§ظ„ظ…ظپطھط§ط­ ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في حفظ المفتاح' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط­ظپط¸ ط§ظ„ظ…ظپطھط§ط­' });
   }
 });
 
@@ -847,11 +977,11 @@ app.delete('/api/me/ai/keys/:providerId', requireUser, async (req: Request, res:
     const { providerId } = req.params;
     const deleted = await db.deleteUserKey(user.id, providerId);
     if (!deleted) {
-      return res.status(404).json({ success: false, error: 'المفتاح غير موجود' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظپطھط§ط­ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
     }
-    res.json({ success: true, message: 'تم حذف المفتاح بنجاح' });
+    res.json({ success: true, message: 'طھظ… ط­ط°ظپ ط§ظ„ظ…ظپطھط§ط­ ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في حذف المفتاح' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط­ط°ظپ ط§ظ„ظ…ظپطھط§ط­' });
   }
 });
 
@@ -864,7 +994,7 @@ app.post('/api/ai/generate', requireUser, aiRateLimiter, async (req: Request, re
   try {
     const { prompt, taskType, projectId } = req.body;
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'يرجى كتابة نص التوجيه (Prompt)' });
+      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'ظٹط±ط¬ظ‰ ظƒطھط§ط¨ط© ظ†طµ ط§ظ„طھظˆط¬ظٹظ‡ (Prompt)' });
     }
 
     const type = (taskType || 'TEXT').toUpperCase();
@@ -919,17 +1049,17 @@ app.post('/api/ai/generate/text', requireUser, aiRateLimiter, async (req: Reques
     const { projectId, prompt, model, routingMode, providerPreference, freeOnly } = req.body;
 
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'يرجى إدخال نص التوجيه (prompt)' });
+      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ظ†طµ ط§ظ„طھظˆط¬ظٹظ‡ (prompt)' });
     }
 
     if (prompt.length > 10000) {
-      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'طول التوجيه يتجاوز الحد المسموح (10,000 حرف)' });
+      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'ط·ظˆظ„ ط§ظ„طھظˆط¬ظٹظ‡ ظٹطھط¬ط§ظˆط² ط§ظ„ط­ط¯ ط§ظ„ظ…ط³ظ…ظˆط­ (10,000 ط­ط±ظپ)' });
     }
 
     if (projectId) {
       const project = await db.getAIProjectById(projectId);
       if (!project || project.userId !== user.id) {
-        return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'غير مصرح لك بالوصول إلى هذا المشروع' });
+        return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ظ…ط´ط±ظˆط¹' });
       }
     }
 
@@ -944,10 +1074,10 @@ app.post('/api/ai/generate/text', requireUser, aiRateLimiter, async (req: Reques
 
     try {
       aiGateway.jobQueue.updateJobStatus(job.id, 'processing');
-
-      const result = await aiGateway.generateText({
-        prompt: job.prompt,
-        model
+      
+      const result = await aiGateway.generateText({ 
+        prompt: job.prompt, 
+        model 
       }, {
         userId: user.id,
         projectId,
@@ -957,10 +1087,10 @@ app.post('/api/ai/generate/text', requireUser, aiRateLimiter, async (req: Reques
         freeOnly
       });
 
-      const completedJob = aiGateway.jobQueue.updateJobStatus(job.id, 'completed', {
-        text: result.text,
+      const completedJob = aiGateway.jobQueue.updateJobStatus(job.id, 'completed', { 
+        text: result.text, 
         model: result.model,
-        providerId: result.providerId
+        providerId: result.providerId 
       });
 
       const completedAt = new Date().toISOString();
@@ -990,10 +1120,10 @@ app.post('/api/ai/generate/text', requireUser, aiRateLimiter, async (req: Reques
       });
     } catch (err: any) {
       aiGateway.jobQueue.updateJobStatus(job.id, 'failed', undefined, err?.message || 'AI processing failed');
-
+      
       const completedAt = new Date().toISOString();
       const durationMs = new Date(completedAt).getTime() - new Date(startedAt).getTime();
-
+      
       await db.recordAIUsage({
         userId: user.id,
         projectId,
@@ -1017,7 +1147,7 @@ app.post('/api/ai/generate/text', requireUser, aiRateLimiter, async (req: Reques
     return res.status(status).json({
       success: false,
       error: 'AI_PROVIDER_ERROR',
-      message: err?.message || 'حدث خطأ أثناء معالجة النص بالذكاء الاصطناعي'
+      message: err?.message || 'ط­ط¯ط« ط®ط·ط£ ط£ط«ظ†ط§ط، ظ…ط¹ط§ظ„ط¬ط© ط§ظ„ظ†طµ ط¨ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ'
     });
   }
 });
@@ -1030,13 +1160,13 @@ app.post('/api/ai/generate/image', requireUser, aiRateLimiter, async (req: Reque
     const { projectId, prompt, model, aspectRatio, routingMode, providerPreference, freeOnly } = req.body;
 
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'يرجى إدخال وصف الصورة (prompt)' });
+      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ظˆطµظپ ط§ظ„طµظˆط±ط© (prompt)' });
     }
 
     if (projectId) {
       const project = await db.getAIProjectById(projectId);
       if (!project || project.userId !== user.id) {
-        return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'غير مصرح لك بالوصول إلى هذا المشروع' });
+        return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ظ…ط´ط±ظˆط¹' });
       }
     }
 
@@ -1051,7 +1181,7 @@ app.post('/api/ai/generate/image', requireUser, aiRateLimiter, async (req: Reque
 
     try {
       aiGateway.jobQueue.updateJobStatus(job.id, 'processing');
-
+      
       const result = await aiGateway.generateImage({
         prompt: job.prompt,
         aspectRatio: aspectRatio || '1:1',
@@ -1066,7 +1196,7 @@ app.post('/api/ai/generate/image', requireUser, aiRateLimiter, async (req: Reque
       });
 
       if (!result.imageBase64 && !result.imageUrl) {
-        throw new Error('لم يتم إرجاع نتيجة صورة صالحة من المزود');
+        throw new Error('ظ„ظ… ظٹطھظ… ط¥ط±ط¬ط§ط¹ ظ†طھظٹط¬ط© طµظˆط±ط© طµط§ظ„ط­ط© ظ…ظ† ط§ظ„ظ…ط²ظˆط¯');
       }
 
       const imageBuffer = result.imageBase64
@@ -1131,7 +1261,7 @@ app.post('/api/ai/generate/image', requireUser, aiRateLimiter, async (req: Reque
       });
     } catch (err: any) {
       aiGateway.jobQueue.updateJobStatus(job.id, 'failed', undefined, err?.message || 'Image generation failed');
-
+      
       const completedAt = new Date().toISOString();
       const durationMs = new Date(completedAt).getTime() - new Date(startedAt).getTime();
 
@@ -1148,7 +1278,7 @@ app.post('/api/ai/generate/image', requireUser, aiRateLimiter, async (req: Reque
         durationMs,
         metadata: { error: err?.message || 'INTERNAL_ERROR' }
       });
-
+      
       throw err;
     }
 
@@ -1158,7 +1288,7 @@ app.post('/api/ai/generate/image', requireUser, aiRateLimiter, async (req: Reque
     return res.status(status).json({
       success: false,
       error: 'AI_PROVIDER_ERROR',
-      message: err?.message || 'حدث خطأ أثناء توليد الصورة بالذكاء الاصطناعي'
+      message: err?.message || 'ط­ط¯ط« ط®ط·ط£ ط£ط«ظ†ط§ط، طھظˆظ„ظٹط¯ ط§ظ„طµظˆط±ط© ط¨ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ'
     });
   }
 });
@@ -1171,13 +1301,13 @@ app.post('/api/ai/generate/code', requireUser, aiRateLimiter, async (req: Reques
     const { projectId, prompt, language, framework, model, routingMode, providerPreference, freeOnly } = req.body;
 
     if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
-      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'يرجى إدخال التوجيه والوصف البرمجي المطلوب' });
+      return res.status(400).json({ success: false, error: 'AI_INVALID_REQUEST', message: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ط§ظ„طھظˆط¬ظٹظ‡ ظˆط§ظ„ظˆطµظپ ط§ظ„ط¨ط±ظ…ط¬ظٹ ط§ظ„ظ…ط·ظ„ظˆط¨' });
     }
 
     if (projectId) {
       const project = await db.getAIProjectById(projectId);
       if (!project || project.userId !== user.id) {
-        return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'غير مصرح لك بالوصول إلى هذا المشروع' });
+        return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ظ…ط´ط±ظˆط¹' });
       }
     }
 
@@ -1192,7 +1322,7 @@ app.post('/api/ai/generate/code', requireUser, aiRateLimiter, async (req: Reques
 
     try {
       aiGateway.jobQueue.updateJobStatus(job.id, 'processing');
-
+      
       const result = await aiGateway.generateCode({
         prompt: job.prompt,
         language: language || 'TypeScript',
@@ -1207,7 +1337,7 @@ app.post('/api/ai/generate/code', requireUser, aiRateLimiter, async (req: Reques
         freeOnly
       });
 
-      const completedJob = aiGateway.jobQueue.updateJobStatus(job.id, 'completed', {
+      const completedJob = aiGateway.jobQueue.updateJobStatus(job.id, 'completed', { 
         summary: result.summary,
         files: result.files,
         model: result.model,
@@ -1241,7 +1371,7 @@ app.post('/api/ai/generate/code', requireUser, aiRateLimiter, async (req: Reques
       });
     } catch (err: any) {
       aiGateway.jobQueue.updateJobStatus(job.id, 'failed', undefined, err?.message || 'Code generation failed');
-
+      
       await db.recordAIUsage({
         userId: user.id,
         projectId,
@@ -1254,7 +1384,7 @@ app.post('/api/ai/generate/code', requireUser, aiRateLimiter, async (req: Reques
         completedAt: new Date().toISOString(),
         metadata: { error: err?.message || 'INTERNAL_ERROR' }
       });
-
+      
       throw err;
     }
 
@@ -1264,7 +1394,7 @@ app.post('/api/ai/generate/code', requireUser, aiRateLimiter, async (req: Reques
     return res.status(status).json({
       success: false,
       error: 'AI_PROVIDER_ERROR',
-      message: err?.message || 'حدث خطأ أثناء توليد الكود بالذكاء الاصطناعي'
+      message: err?.message || 'ط­ط¯ط« ط®ط·ط£ ط£ط«ظ†ط§ط، طھظˆظ„ظٹط¯ ط§ظ„ظƒظˆط¯ ط¨ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ'
     });
   }
 });
@@ -1274,7 +1404,7 @@ app.post('/api/ai/download-zip', requireUser, async (req: Request, res: Response
   try {
     const { files, projectName } = req.body;
     if (!Array.isArray(files) || files.length === 0) {
-      return res.status(400).json({ success: false, error: 'لا توجد ملفات لتنزيلها' });
+      return res.status(400).json({ success: false, error: 'ظ„ط§ طھظˆط¬ط¯ ظ…ظ„ظپط§طھ ظ„طھظ†ط²ظٹظ„ظ‡ط§' });
     }
 
     const zip = new AdmZip();
@@ -1300,7 +1430,7 @@ app.post('/api/ai/download-zip', requireUser, async (req: Request, res: Response
     res.send(zipBuffer);
   } catch (err: any) {
     console.error('ZIP generation error:', err);
-    res.status(500).json({ success: false, error: 'فشل في تحزيم الكود في أرشيف ZIP' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط²ظٹظ… ط§ظ„ظƒظˆط¯ ظپظٹ ط£ط±ط´ظٹظپ ZIP' });
   }
 });
 
@@ -1314,7 +1444,7 @@ app.get('/api/ai/projects', requireUser, async (req: Request, res: Response) => 
     const projects = await db.getUserAIProjects(user.id);
     res.json({ success: true, projects });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل المشاريع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ظ…ط´ط§ط±ظٹط¹' });
   }
 });
 
@@ -1323,12 +1453,12 @@ app.post('/api/ai/projects', requireUser, async (req: Request, res: Response) =>
     const user = (req as any).user;
     const { name, description, type } = req.body;
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return res.status(400).json({ success: false, error: 'اسم المشروع يجب أن لا يقل عن حرفين' });
+      return res.status(400).json({ success: false, error: 'ط§ط³ظ… ط§ظ„ظ…ط´ط±ظˆط¹ ظٹط¬ط¨ ط£ظ† ظ„ط§ ظٹظ‚ظ„ ط¹ظ† ط­ط±ظپظٹظ†' });
     }
     const project = await db.createAIProject(user.id, name.trim(), description, type || 'GENERAL');
     res.status(201).json({ success: true, project });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في إنشاء المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¥ظ†ط´ط§ط، ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -1337,11 +1467,11 @@ app.get('/api/ai/projects/:id', requireUser, async (req: Request, res: Response)
     const user = (req as any).user;
     const project = await db.getAIProjectById(req.params.id);
     if (!project || project.userId !== user.id) {
-      return res.status(404).json({ success: false, error: 'المشروع غير موجود' });
+      return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ط´ط±ظˆط¹ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
     }
     res.json({ success: true, project });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في جلب المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¬ظ„ط¨ ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -1351,12 +1481,12 @@ app.get('/api/ai/projects/:projectId/jobs', requireUser, async (req: Request, re
     const { projectId } = req.params;
     const project = await db.getAIProjectById(projectId);
     if (!project || project.userId !== user.id) {
-      return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'غير مصرح لك بالوصول إلى هذا المشروع' });
+      return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ظ…ط´ط±ظˆط¹' });
     }
     const jobs = aiGateway.jobQueue.listJobsByProject(projectId);
     res.json({ success: true, jobs });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل سجل المهام' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط³ط¬ظ„ ط§ظ„ظ…ظ‡ط§ظ…' });
   }
 });
 
@@ -1366,15 +1496,15 @@ app.get('/api/ai/projects/:projectId/jobs/:jobId', requireUser, async (req: Requ
     const { projectId, jobId } = req.params;
     const project = await db.getAIProjectById(projectId);
     if (!project || project.userId !== user.id) {
-      return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'غير مصرح لك بالوصول إلى هذا المشروع' });
+      return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ظ…ط´ط±ظˆط¹' });
     }
     const job = aiGateway.jobQueue.getJob(jobId);
     if (!job || job.userId !== user.id || job.projectId !== projectId) {
-      return res.status(404).json({ success: false, error: 'AI_JOB_NOT_FOUND', message: 'المهمة غير موجودة' });
+      return res.status(404).json({ success: false, error: 'AI_JOB_NOT_FOUND', message: 'ط§ظ„ظ…ظ‡ظ…ط© ط؛ظٹط± ظ…ظˆط¬ظˆط¯ط©' });
     }
     res.json({ success: true, job });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في جلب تفاصيل المهمة' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¬ظ„ط¨ طھظپط§طµظٹظ„ ط§ظ„ظ…ظ‡ظ…ط©' });
   }
 });
 
@@ -1384,12 +1514,12 @@ app.get('/api/ai/projects/:projectId/assets', requireUser, async (req: Request, 
     const { projectId } = req.params;
     const project = await db.getAIProjectById(projectId);
     if (!project || project.userId !== user.id) {
-      return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'غير مصرح لك بالوصول إلى هذا المشروع' });
+      return res.status(403).json({ success: false, error: 'AI_UNAUTHORIZED', message: 'ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط§ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ظ…ط´ط±ظˆط¹' });
     }
     const assets = await db.getProjectAIAssets(projectId);
     res.json({ success: true, assets });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في جلب وسائط وأصول المشروع' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¬ظ„ط¨ ظˆط³ط§ط¦ط· ظˆط£طµظˆظ„ ط§ظ„ظ…ط´ط±ظˆط¹' });
   }
 });
 
@@ -1422,20 +1552,20 @@ registerPreviewRoutes(app, requireUser, aiRateLimiter);
 // ==========================================
 
 registerExportRoutes(app, requireUser, aiRateLimiter);
-
-// ==========================================
-// EXTERNAL BUILD ORCHESTRATION ENDPOINTS (PHASE 9)
-// ==========================================
-
 registerBuildRoutes(app, requireUser, aiRateLimiter);
 
+// ==========================================
+// KAYAN CV ENDPOINTS (PHASE 1)
+// ==========================================
+
+registerCVRoutes(app, requireUser);
 
 app.get('/api/admin/users', requireAdmin, async (req: Request, res: Response) => {
   try {
     const users = await db.listUsers();
     res.json({ success: true, users });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل قائمة المستخدمين' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ†' });
   }
 });
 
@@ -1443,10 +1573,10 @@ app.post('/api/admin/users/:id/suspend', requireAdmin, async (req: Request, res:
   try {
     const admin = (req as any).admin;
     await db.updateUserStatus(req.params.id, 'SUSPENDED');
-    await db.logActivity('USER_SUSPEND', 'USER', req.params.id, `تعليق حساب المستخدم ${req.params.id}`, admin.username);
-    res.json({ success: true, message: 'تم تعليق حساب المستخدم بنجاح' });
+    await db.logActivity('USER_SUSPEND', 'USER', req.params.id, `طھط¹ظ„ظٹظ‚ ط­ط³ط§ط¨ ط§ظ„ظ…ط³طھط®ط¯ظ… ${req.params.id}`, admin.username);
+    res.json({ success: true, message: 'طھظ… طھط¹ظ„ظٹظ‚ ط­ط³ط§ط¨ ط§ظ„ظ…ط³طھط®ط¯ظ… ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تعليق حساب المستخدم' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط¹ظ„ظٹظ‚ ط­ط³ط§ط¨ ط§ظ„ظ…ط³طھط®ط¯ظ…' });
   }
 });
 
@@ -1454,10 +1584,10 @@ app.post('/api/admin/users/:id/activate', requireAdmin, async (req: Request, res
   try {
     const admin = (req as any).admin;
     await db.updateUserStatus(req.params.id, 'ACTIVE');
-    await db.logActivity('USER_ACTIVATE', 'USER', req.params.id, `تنشيط حساب المستخدم ${req.params.id}`, admin.username);
-    res.json({ success: true, message: 'تم تنشيط حساب المستخدم بنجاح' });
+    await db.logActivity('USER_ACTIVATE', 'USER', req.params.id, `طھظ†ط´ظٹط· ط­ط³ط§ط¨ ط§ظ„ظ…ط³طھط®ط¯ظ… ${req.params.id}`, admin.username);
+    res.json({ success: true, message: 'طھظ… طھظ†ط´ظٹط· ط­ط³ط§ط¨ ط§ظ„ظ…ط³طھط®ط¯ظ… ط¨ظ†ط¬ط§ط­' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تنشيط حساب المستخدم' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھظ†ط´ظٹط· ط­ط³ط§ط¨ ط§ظ„ظ…ط³طھط®ط¯ظ…' });
   }
 });
 
@@ -1469,21 +1599,21 @@ app.post('/api/admin/users/:id/activate', requireAdmin, async (req: Request, res
 app.post('/api/admin/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;
   if (!username || !password) {
-    return res.status(400).json({ success: false, error: 'يرجى إدخال اسم المستخدم وكلمة المرور' });
+    return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ ط¥ط¯ط®ط§ظ„ ط§ط³ظ… ط§ظ„ظ…ط³طھط®ط¯ظ… ظˆظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±' });
   }
 
   const admin = await db.getAdminByUsername(username.trim());
   if (!admin) {
-    return res.status(401).json({ success: false, error: 'بيانات الدخول غير صحيحة' });
+    return res.status(401).json({ success: false, error: 'ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¯ط®ظˆظ„ ط؛ظٹط± طµط­ظٹط­ط©' });
   }
 
   const passwordValid = await bcrypt.compare(password, admin.passwordHash || '');
   if (!passwordValid) {
-    return res.status(401).json({ success: false, error: 'بيانات الدخول غير صحيحة' });
+    return res.status(401).json({ success: false, error: 'ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¯ط®ظˆظ„ ط؛ظٹط± طµط­ظٹط­ط©' });
   }
 
   const session = await db.createSession(admin.id);
-  await db.logActivity('ADMIN_LOGIN', 'ADMIN', admin.id, `تسجيل دخول ناجح للمسؤول (${admin.username})`, admin.username);
+  await db.logActivity('ADMIN_LOGIN', 'ADMIN', admin.id, `طھط³ط¬ظٹظ„ ط¯ط®ظˆظ„ ظ†ط§ط¬ط­ ظ„ظ„ظ…ط³ط¤ظˆظ„ (${admin.username})`, admin.username);
 
   res.cookie('kayan_admin_session', session.token, {
     httpOnly: true,
@@ -1523,7 +1653,7 @@ app.post('/api/admin/logout', requireAdmin, async (req: Request, res: Response) 
   if (session) {
     await db.deleteSession(session.token);
   }
-  await db.logActivity('ADMIN_LOGOUT', 'ADMIN', admin.id, `تسجيل خروج المسؤول (${admin.username})`, admin.username);
+  await db.logActivity('ADMIN_LOGOUT', 'ADMIN', admin.id, `طھط³ط¬ظٹظ„ ط®ط±ظˆط¬ ط§ظ„ظ…ط³ط¤ظˆظ„ (${admin.username})`, admin.username);
   res.clearCookie('kayan_admin_session');
   res.json({ success: true });
 });
@@ -1534,24 +1664,24 @@ app.post('/api/admin/change-password', requireAdmin, async (req: Request, res: R
   const admin = (req as any).admin;
 
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ success: false, error: 'يرجى ملء جميع الحقول' });
+    return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ ظ…ظ„ط، ط¬ظ…ظٹط¹ ط§ظ„ط­ظ‚ظˆظ„' });
   }
 
   if (newPassword.length < 8) {
-    return res.status(400).json({ success: false, error: 'يجب ألا تقل كلمة المرور الجديدة عن 8 أحرف' });
+    return res.status(400).json({ success: false, error: 'ظٹط¬ط¨ ط£ظ„ط§ طھظ‚ظ„ ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ط¬ط¯ظٹط¯ط© ط¹ظ† 8 ط£ط­ط±ظپ' });
   }
 
   const matches = await bcrypt.compare(currentPassword, admin.passwordHash);
   if (!matches) {
-    return res.status(400).json({ success: false, error: 'كلمة المرور الحالية غير صحيحة' });
+    return res.status(400).json({ success: false, error: 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ط­ط§ظ„ظٹط© ط؛ظٹط± طµط­ظٹط­ط©' });
   }
 
   const salt = await bcrypt.genSalt(10);
   const newHash = await bcrypt.hash(newPassword, salt);
   await db.updateAdminPassword(admin.id, newHash);
-  await db.logActivity('CHANGE_PASSWORD', 'ADMIN', admin.id, 'تم تغيير كلمة المرور بنجاح', admin.username);
+  await db.logActivity('CHANGE_PASSWORD', 'ADMIN', admin.id, 'طھظ… طھط؛ظٹظٹط± ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط¨ظ†ط¬ط§ط­', admin.username);
 
-  res.json({ success: true, message: 'تم تحديث كلمة المرور بنجاح' });
+  res.json({ success: true, message: 'طھظ… طھط­ط¯ظٹط« ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط¨ظ†ط¬ط§ط­' });
 });
 
 // Dashboard stats
@@ -1586,12 +1716,12 @@ app.post('/api/admin/apps', requireAdmin, async (req: Request, res: Response) =>
   } = req.body;
 
   if (!nameAr || !nameEn || !slug || !packageName) {
-    return res.status(400).json({ success: false, error: 'يرجى ملء الحقول الأساسية (الاسم، المعرّف، اسم الحزمة)' });
+    return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ ظ…ظ„ط، ط§ظ„ط­ظ‚ظˆظ„ ط§ظ„ط£ط³ط§ط³ظٹط© (ط§ظ„ط§ط³ظ…طŒ ط§ظ„ظ…ط¹ط±ظ‘ظپطŒ ط§ط³ظ… ط§ظ„ط­ط²ظ…ط©)' });
   }
 
   const existingSlug = await db.getApplicationBySlug(slug, false);
   if (existingSlug) {
-    return res.status(400).json({ success: false, error: 'معرّف الرابط (Slug) مستخدم بالفعل، يرجى اختيار معرّف آخر' });
+    return res.status(400).json({ success: false, error: 'ظ…ط¹ط±ظ‘ظپ ط§ظ„ط±ط§ط¨ط· (Slug) ظ…ط³طھط®ط¯ظ… ط¨ط§ظ„ظپط¹ظ„طŒ ظٹط±ط¬ظ‰ ط§ط®طھظٹط§ط± ظ…ط¹ط±ظ‘ظپ ط¢ط®ط±' });
   }
 
   const newApp = await db.createApplication({
@@ -1611,7 +1741,7 @@ app.post('/api/admin/apps', requireAdmin, async (req: Request, res: Response) =>
     bannerUrl: bannerUrl || '/assets/images/kayan_pdf_feature_banner.jpg',
     privacyUrl: privacyUrl || '/privacy',
     termsUrl: termsUrl || '/terms',
-    copyright: copyright || '© 2026 المهندس جهاد الصليحي. جميع الحقوق محفوظة.',
+    copyright: copyright || 'آ© 2026 ط§ظ„ظ…ظ‡ظ†ط¯ط³ ط¬ظ‡ط§ط¯ ط§ظ„طµظ„ظٹط­ظٹ. ط¬ظ…ظٹط¹ ط§ظ„ط­ظ‚ظˆظ‚ ظ…ط­ظپظˆط¸ط©.',
     isPublished: !!isPublished,
     featured: !!featured
   }, admin.username);
@@ -1627,7 +1757,7 @@ app.put('/api/admin/apps/:id', requireAdmin, async (req: Request, res: Response)
 
   const updated = await db.updateApplication(id, updates, admin.username);
   if (!updated) {
-    return res.status(404).json({ success: false, error: 'التطبيق غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„طھط·ط¨ظٹظ‚ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
 
   res.json({ success: true, app: updated });
@@ -1639,7 +1769,7 @@ app.delete('/api/admin/apps/:id', requireAdmin, async (req: Request, res: Respon
   const { id } = req.params;
   const deleted = await db.deleteApplication(id, admin.username);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'التطبيق غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„طھط·ط¨ظٹظ‚ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true });
 });
@@ -1650,7 +1780,7 @@ app.post('/api/admin/apps/:id/toggle-publish', requireAdmin, async (req: Request
   const { id } = req.params;
   const appItem = await db.togglePublish(id, admin.username);
   if (!appItem) {
-    return res.status(404).json({ success: false, error: 'التطبيق غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„طھط·ط¨ظٹظ‚ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true, isPublished: appItem.isPublished });
 });
@@ -1658,14 +1788,14 @@ app.post('/api/admin/apps/:id/toggle-publish', requireAdmin, async (req: Request
 // Upload and Validate APK file
 app.post('/api/admin/upload-apk', requireAdmin, upload.single('apkFile'), async (req: Request, res: Response) => {
   if (!req.file) {
-    return res.status(400).json({ success: false, error: 'لم يتم إرسال أي ملف APK' });
+    return res.status(400).json({ success: false, error: 'ظ„ظ… ظٹطھظ… ط¥ط±ط³ط§ظ„ ط£ظٹ ظ…ظ„ظپ APK' });
   }
 
   const analysis = validateAndAnalyzeApk(req.file.buffer, req.file.originalname);
   if (!analysis.valid) {
     return res.status(400).json({
       success: false,
-      error: analysis.error || 'الملف المرفوع غير صالح كحزمة APK'
+      error: analysis.error || 'ط§ظ„ظ…ظ„ظپ ط§ظ„ظ…ط±ظپظˆط¹ ط؛ظٹط± طµط§ظ„ط­ ظƒط­ط²ظ…ط© APK'
     });
   }
 
@@ -1694,7 +1824,7 @@ app.post('/api/admin/upload-apk', requireAdmin, upload.single('apkFile'), async 
       }
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: `فشل تخزين أو رفع الحزمة: ${err.message || err}` });
+    res.status(500).json({ success: false, error: `ظپط´ظ„ طھط®ط²ظٹظ† ط£ظˆ ط±ظپط¹ ط§ظ„ط­ط²ظ…ط©: ${err.message || err}` });
   }
 });
 
@@ -1707,12 +1837,12 @@ app.post('/api/admin/releases', requireAdmin, async (req: Request, res: Response
   } = req.body;
 
   if (!appId || !versionName || !versionCode || !apkFileName || !sha256 || !apkSizeBytes) {
-    return res.status(400).json({ success: false, error: 'يرجى تقديم بيانات الإصدار وملف الحزمة المعتمد' });
+    return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ طھظ‚ط¯ظٹظ… ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¥طµط¯ط§ط± ظˆظ…ظ„ظپ ط§ظ„ط­ط²ظ…ط© ط§ظ„ظ…ط¹طھظ…ط¯' });
   }
 
   const appItem = await db.getApplicationById(appId);
   if (!appItem) {
-    return res.status(404).json({ success: false, error: 'التطبيق التابع للإصدار غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„طھط·ط¨ظٹظ‚ ط§ظ„طھط§ط¨ط¹ ظ„ظ„ط¥طµط¯ط§ط± ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
 
   // Reject release if packageName Candidate is provided and does not match expected app package name
@@ -1720,7 +1850,7 @@ app.post('/api/admin/releases', requireAdmin, async (req: Request, res: Response
     if (req.body.packageNameCandidate !== appItem.packageName) {
       return res.status(400).json({
         success: false,
-        error: `اسم حزمة APK المرفوع (${req.body.packageNameCandidate}) لا يطابق اسم الحزمة المسجل للتطبيق (${appItem.packageName})`
+        error: `ط§ط³ظ… ط­ط²ظ…ط© APK ط§ظ„ظ…ط±ظپظˆط¹ (${req.body.packageNameCandidate}) ظ„ط§ ظٹط·ط§ط¨ظ‚ ط§ط³ظ… ط§ظ„ط­ط²ظ…ط© ط§ظ„ظ…ط³ط¬ظ„ ظ„ظ„طھط·ط¨ظٹظ‚ (${appItem.packageName})`
       });
     }
   }
@@ -1750,7 +1880,7 @@ app.delete('/api/admin/releases/:id', requireAdmin, async (req: Request, res: Re
   const { id } = req.params;
   const deleted = await db.deleteRelease(id, admin.username);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'الإصدار غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ط¥طµط¯ط§ط± ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true });
 });
@@ -1770,7 +1900,7 @@ app.get('/api/admin/products/:id', requireAdmin, async (req: Request, res: Respo
   const { id } = req.params;
   const product = await db.getProductById(id);
   if (!product) {
-    return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   const media = await db.getMediaByProductId(id, false);
   const files = await db.getProductFiles(id);
@@ -1789,16 +1919,16 @@ app.post('/api/admin/products', requireAdmin, async (req: Request, res: Response
   } = req.body;
 
   if (!nameAr || !nameEn || !slug || !type) {
-    return res.status(400).json({ success: false, error: 'يرجى تقديم الحقول الأساسية للمنتج (الاسم بالعربية، بالإنجليزية، المعرف، ونوع المنتج)' });
+    return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ طھظ‚ط¯ظٹظ… ط§ظ„ط­ظ‚ظˆظ„ ط§ظ„ط£ط³ط§ط³ظٹط© ظ„ظ„ظ…ظ†طھط¬ (ط§ظ„ط§ط³ظ… ط¨ط§ظ„ط¹ط±ط¨ظٹط©طŒ ط¨ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©طŒ ط§ظ„ظ…ط¹ط±ظپطŒ ظˆظ†ظˆط¹ ط§ظ„ظ…ظ†طھط¬)' });
   }
 
   if (videoUrl && !isValidVideoUrl(videoUrl)) {
-    return res.status(400).json({ success: false, error: 'رابط الفيديو غير صالح أو غير معتمد. يرجى تزويد رابط من YouTube أو Vimeo فقط.' });
+    return res.status(400).json({ success: false, error: 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ ط؛ظٹط± طµط§ظ„ط­ ط£ظˆ ط؛ظٹط± ظ…ط¹طھظ…ط¯. ظٹط±ط¬ظ‰ طھط²ظˆظٹط¯ ط±ط§ط¨ط· ظ…ظ† YouTube ط£ظˆ Vimeo ظپظ‚ط·.' });
   }
 
   const existing = await db.getProductBySlug(slug, false);
   if (existing) {
-    return res.status(400).json({ success: false, error: 'معرف الرابط (Slug) مستخدم بالفعل لمنتج آخر' });
+    return res.status(400).json({ success: false, error: 'ظ…ط¹ط±ظپ ط§ظ„ط±ط§ط¨ط· (Slug) ظ…ط³طھط®ط¯ظ… ط¨ط§ظ„ظپط¹ظ„ ظ„ظ…ظ†طھط¬ ط¢ط®ط±' });
   }
 
   const product = await db.createProduct({
@@ -1849,7 +1979,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req: Request, res: Respo
   const updates = { ...req.body };
 
   if (updates.videoUrl && !isValidVideoUrl(updates.videoUrl)) {
-    return res.status(400).json({ success: false, error: 'رابط الفيديو غير صالح. يسمح بروابط YouTube و Vimeo فقط.' });
+    return res.status(400).json({ success: false, error: 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ ط؛ظٹط± طµط§ظ„ط­. ظٹط³ظ…ط­ ط¨ط±ظˆط§ط¨ط· YouTube ظˆ Vimeo ظپظ‚ط·.' });
   }
 
   if (typeof updates.featuresAr === 'string') {
@@ -1864,7 +1994,7 @@ app.put('/api/admin/products/:id', requireAdmin, async (req: Request, res: Respo
 
   const updated = await db.updateProduct(id, updates, admin.username);
   if (!updated) {
-    return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
 
   res.json({ success: true, product: updated });
@@ -1876,7 +2006,7 @@ app.delete('/api/admin/products/:id', requireAdmin, async (req: Request, res: Re
   const { id } = req.params;
   const deleted = await db.deleteProduct(id, admin.username);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true });
 });
@@ -1887,7 +2017,7 @@ app.post('/api/admin/products/:id/publish', requireAdmin, async (req: Request, r
   const { id } = req.params;
   const product = await db.publishProduct(id, true, admin.username);
   if (!product) {
-    return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true, product });
 });
@@ -1898,7 +2028,7 @@ app.post('/api/admin/products/:id/unpublish', requireAdmin, async (req: Request,
   const { id } = req.params;
   const product = await db.unpublishProduct(id, admin.username);
   if (!product) {
-    return res.status(404).json({ success: false, error: 'المنتج غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ†طھط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true, product });
 });
@@ -1921,12 +2051,12 @@ app.post('/api/admin/products/:productId/media', requireAdmin, async (req: Reque
   const { mediaType, fileUrl, thumbnailUrl, externalUrl, titleAr, titleEn, altAr, altEn, sortOrder, isPublished } = req.body;
 
   if (!mediaType) {
-    return res.status(400).json({ success: false, error: 'نوع الوسيط مطلوب' });
+    return res.status(400).json({ success: false, error: 'ظ†ظˆط¹ ط§ظ„ظˆط³ظٹط· ظ…ط·ظ„ظˆط¨' });
   }
 
   if (externalUrl && (mediaType === 'video' || externalUrl.includes('youtube') || externalUrl.includes('vimeo'))) {
     if (!isValidVideoUrl(externalUrl)) {
-      return res.status(400).json({ success: false, error: 'رابط الفيديو غير مدعوم أو غير آمن. يسمح بـ YouTube و Vimeo فقط.' });
+      return res.status(400).json({ success: false, error: 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ ط؛ظٹط± ظ…ط¯ط¹ظˆظ… ط£ظˆ ط؛ظٹط± ط¢ظ…ظ†. ظٹط³ظ…ط­ ط¨ظ€ YouTube ظˆ Vimeo ظپظ‚ط·.' });
     }
   }
 
@@ -1952,7 +2082,7 @@ app.get('/api/admin/media/:id', requireAdmin, async (req: Request, res: Response
   const { id } = req.params;
   const media = await db.getMediaById(id);
   if (!media) {
-    return res.status(404).json({ success: false, error: 'عنصر الوسائط غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط¹ظ†طµط± ط§ظ„ظˆط³ط§ط¦ط· ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true, media });
 });
@@ -1968,7 +2098,7 @@ app.post('/api/admin/products/:productId/media/upload', requireAdmin, upload.sin
   const { mediaType, titleAr, titleEn, altAr, altEn, sortOrder, isPublished } = req.body;
 
   if (!req.file) {
-    return res.status(400).json({ success: false, error: 'لم يتم إرسال أي ملف صورة للرفع' });
+    return res.status(400).json({ success: false, error: 'ظ„ظ… ظٹطھظ… ط¥ط±ط³ط§ظ„ ط£ظٹ ظ…ظ„ظپ طµظˆط±ط© ظ„ظ„ط±ظپط¹' });
   }
 
   const rawFilename = req.file.originalname || 'image';
@@ -1978,19 +2108,19 @@ app.post('/api/admin/products/:productId/media/upload', requireAdmin, upload.sin
   if (!allowedMediaMimeTypes.includes(req.file.mimetype)) {
     return res.status(400).json({
       success: false,
-      error: `نوع الوسائط غير مدعوم (${req.file.mimetype}). يسمح فقط بملفات الصور: JPEG, PNG, WebP, GIF, SVG.`
+      error: `ظ†ظˆط¹ ط§ظ„ظˆط³ط§ط¦ط· ط؛ظٹط± ظ…ط¯ط¹ظˆظ… (${req.file.mimetype}). ظٹط³ظ…ط­ ظپظ‚ط· ط¨ظ…ظ„ظپط§طھ ط§ظ„طµظˆط±: JPEG, PNG, WebP, GIF, SVG.`
     });
   }
 
   if (!allowedMediaExtensions.includes(lowerExt)) {
     return res.status(400).json({
       success: false,
-      error: `امتداد الملف غير مسموح به (${lowerExt}). الامتدادات المقبولة: .jpg, .jpeg, .png, .webp, .gif, .svg`
+      error: `ط§ظ…طھط¯ط§ط¯ ط§ظ„ظ…ظ„ظپ ط؛ظٹط± ظ…ط³ظ…ظˆط­ ط¨ظ‡ (${lowerExt}). ط§ظ„ط§ظ…طھط¯ط§ط¯ط§طھ ط§ظ„ظ…ظ‚ط¨ظˆظ„ط©: .jpg, .jpeg, .png, .webp, .gif, .svg`
     });
   }
 
   if (req.file.size > 15 * 1024 * 1024) {
-    return res.status(400).json({ success: false, error: 'حجم ملف الصورة يتجاوز الحد المسموح به (15 ميجابايت)' });
+    return res.status(400).json({ success: false, error: 'ط­ط¬ظ… ظ…ظ„ظپ ط§ظ„طµظˆط±ط© ظٹطھط¬ط§ظˆط² ط§ظ„ط­ط¯ ط§ظ„ظ…ط³ظ…ظˆط­ ط¨ظ‡ (15 ظ…ظٹط¬ط§ط¨ط§ظٹطھ)' });
   }
 
   try {
@@ -2011,7 +2141,7 @@ app.post('/api/admin/products/:productId/media/upload', requireAdmin, upload.sin
 
     res.json({ success: true, media });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: `فشل تخزين ملف الوسائط: ${err.message || err}` });
+    res.status(500).json({ success: false, error: `ظپط´ظ„ طھط®ط²ظٹظ† ظ…ظ„ظپ ط§ظ„ظˆط³ط§ط¦ط·: ${err.message || err}` });
   }
 });
 
@@ -2023,13 +2153,13 @@ app.put('/api/admin/media/:id', requireAdmin, async (req: Request, res: Response
 
   if (updates.externalUrl && (updates.mediaType === 'video' || updates.externalUrl.includes('youtube') || updates.externalUrl.includes('vimeo'))) {
     if (!isValidVideoUrl(updates.externalUrl)) {
-      return res.status(400).json({ success: false, error: 'رابط الفيديو غير مدعوم أو غير آمن. يسمح بـ YouTube و Vimeo فقط.' });
+      return res.status(400).json({ success: false, error: 'ط±ط§ط¨ط· ط§ظ„ظپظٹط¯ظٹظˆ ط؛ظٹط± ظ…ط¯ط¹ظˆظ… ط£ظˆ ط؛ظٹط± ط¢ظ…ظ†. ظٹط³ظ…ط­ ط¨ظ€ YouTube ظˆ Vimeo ظپظ‚ط·.' });
     }
   }
 
   const media = await db.updateMedia(id, updates, admin.username);
   if (!media) {
-    return res.status(404).json({ success: false, error: 'عنصر الوسائط غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط¹ظ†طµط± ط§ظ„ظˆط³ط§ط¦ط· ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true, media });
 });
@@ -2040,7 +2170,7 @@ app.delete('/api/admin/media/:id', requireAdmin, async (req: Request, res: Respo
   const { id } = req.params;
   const deleted = await db.deleteMedia(id, admin.username);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'عنصر الوسائط غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط¹ظ†طµط± ط§ظ„ظˆط³ط§ط¦ط· ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true });
 });
@@ -2052,7 +2182,7 @@ app.post('/api/admin/products/:productId/media/reorder', requireAdmin, async (re
   const { orderedIds } = req.body;
 
   if (!Array.isArray(orderedIds)) {
-    return res.status(400).json({ success: false, error: 'يرجى تقديم مصفوفة معرفات الوسائط لإعادة الترتيب' });
+    return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ طھظ‚ط¯ظٹظ… ظ…طµظپظˆظپط© ظ…ط¹ط±ظپط§طھ ط§ظ„ظˆط³ط§ط¦ط· ظ„ط¥ط¹ط§ط¯ط© ط§ظ„طھط±طھظٹط¨' });
   }
 
   await db.reorderProductMedia(productId, orderedIds, admin.username);
@@ -2084,7 +2214,7 @@ app.post('/api/admin/products/:productId/files/upload', requireAdmin, upload.sin
   const { title, fileType, isMain } = req.body;
 
   if (!req.file) {
-    return res.status(400).json({ success: false, error: 'لم يتم إرسال أي ملف للرفع' });
+    return res.status(400).json({ success: false, error: 'ظ„ظ… ظٹطھظ… ط¥ط±ط³ط§ظ„ ط£ظٹ ظ…ظ„ظپ ظ„ظ„ط±ظپط¹' });
   }
 
   const rawFilename = req.file.originalname || 'file';
@@ -2095,12 +2225,12 @@ app.post('/api/admin/products/:productId/files/upload', requireAdmin, upload.sin
   if (!isAllowedExt) {
     return res.status(400).json({
       success: false,
-      error: `نوع الملف غير مسموح به (${lowerExt}). الامتدادات المدعومة تشمل: PDF, EPUB, ZIP, APK, MP3, MP4, المستندات المكتبية والتصميمية.`
+      error: `ظ†ظˆط¹ ط§ظ„ظ…ظ„ظپ ط؛ظٹط± ظ…ط³ظ…ظˆط­ ط¨ظ‡ (${lowerExt}). ط§ظ„ط§ظ…طھط¯ط§ط¯ط§طھ ط§ظ„ظ…ط¯ط¹ظˆظ…ط© طھط´ظ…ظ„: PDF, EPUB, ZIP, APK, MP3, MP4, ط§ظ„ظ…ط³طھظ†ط¯ط§طھ ط§ظ„ظ…ظƒطھط¨ظٹط© ظˆط§ظ„طھطµظ…ظٹظ…ظٹط©.`
     });
   }
 
   if (req.file.size > 150 * 1024 * 1024) {
-    return res.status(400).json({ success: false, error: 'حجم الملف يتجاوز الحد المسموح به (150 ميجابايت)' });
+    return res.status(400).json({ success: false, error: 'ط­ط¬ظ… ط§ظ„ظ…ظ„ظپ ظٹطھط¬ط§ظˆط² ط§ظ„ط­ط¯ ط§ظ„ظ…ط³ظ…ظˆط­ ط¨ظ‡ (150 ظ…ظٹط¬ط§ط¨ط§ظٹطھ)' });
   }
 
   try {
@@ -2124,7 +2254,7 @@ app.post('/api/admin/products/:productId/files/upload', requireAdmin, upload.sin
 
     res.json({ success: true, file: productFile });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: `فشل تخزين الملف: ${err.message || err}` });
+    res.status(500).json({ success: false, error: `ظپط´ظ„ طھط®ط²ظٹظ† ط§ظ„ظ…ظ„ظپ: ${err.message || err}` });
   }
 });
 
@@ -2134,7 +2264,7 @@ app.delete('/api/admin/product-files/:id', requireAdmin, async (req: Request, re
   const { id } = req.params;
   const deleted = await db.deleteProductFile(id, admin.username);
   if (!deleted) {
-    return res.status(404).json({ success: false, error: 'الملف غير موجود' });
+    return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ظ„ظپ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
   }
   res.json({ success: true });
 });
@@ -2226,7 +2356,7 @@ app.get('/api/admin/ai/providers', requireAdmin, async (req: Request, res: Respo
     });
     res.json({ success: true, providers: enriched });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل المزودين' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ظ…ط²ظˆط¯ظٹظ†' });
   }
 });
 
@@ -2236,12 +2366,12 @@ app.patch('/api/admin/ai/providers/:id', requireAdmin, async (req: Request, res:
     const admin = (req as any).admin;
     const updates = req.body;
     const success = await db.updateAIProviderDetails(id, updates);
-    if (!success) return res.status(404).json({ success: false, error: 'المزود غير موجود' });
-
-    await db.logActivity('AI_PROVIDER_UPDATED', 'AI_PROVIDER', id, `تعديل إعدادات المزود: ${id}`, admin.username);
+    if (!success) return res.status(404).json({ success: false, error: 'ط§ظ„ظ…ط²ظˆط¯ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    
+    await db.logActivity('AI_PROVIDER_UPDATED', 'AI_PROVIDER', id, `طھط¹ط¯ظٹظ„ ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ…ط²ظˆط¯: ${id}`, admin.username);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحديث المزود' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط¯ظٹط« ط§ظ„ظ…ط²ظˆط¯' });
   }
 });
 
@@ -2250,12 +2380,12 @@ app.post('/api/admin/ai/providers/:id/test', requireAdmin, async (req: Request, 
     const { id } = req.params;
     const provider = aiGateway.getProvider(id);
     if (!provider) return res.status(404).json({ success: false, error: 'Adapter not found' });
-
+    
     const isConfigured = provider.isConfigured();
-    res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       status: isConfigured ? 'CONNECTED' : 'NOT_CONFIGURED',
-      details: isConfigured ? 'المزود مهيأ وجاهز للعمل' : 'مفتاح API غير متوفر في البيئة'
+      details: isConfigured ? 'ط§ظ„ظ…ط²ظˆط¯ ظ…ظ‡ظٹط£ ظˆط¬ط§ظ‡ط² ظ„ظ„ط¹ظ…ظ„' : 'ظ…ظپطھط§ط­ API ط؛ظٹط± ظ…طھظˆظپط± ظپظٹ ط§ظ„ط¨ظٹط¦ط©'
     });
   } catch (err: any) {
     res.json({ success: false, status: 'ERROR', details: err.message });
@@ -2267,7 +2397,7 @@ app.get('/api/admin/ai/models', requireAdmin, async (req: Request, res: Response
     const models = await db.getAIModels();
     res.json({ success: true, models });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل النماذج' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ظ†ظ…ط§ط°ط¬' });
   }
 });
 
@@ -2276,23 +2406,23 @@ app.post('/api/admin/ai/models', requireAdmin, async (req: Request, res: Respons
     const admin = (req as any).admin;
     const modelData = req.body;
     if (!modelData.providerId || !modelData.modelId) {
-      return res.status(400).json({ success: false, error: 'يرجى تحديد المزود ومعرّف النموذج' });
+      return res.status(400).json({ success: false, error: 'ظٹط±ط¬ظ‰ طھط­ط¯ظٹط¯ ط§ظ„ظ…ط²ظˆط¯ ظˆظ…ط¹ط±ظ‘ظپ ط§ظ„ظ†ظ…ظˆط°ط¬' });
     }
-
+    
     const id = `model_${modelData.providerId}_${modelData.modelId.replace(/[^a-z0-9]/g, '_')}`;
     const now = new Date().toISOString();
-
+    
     const newModel = await db.createAIModel({
       ...modelData,
       id,
       createdAt: now,
       updatedAt: now
     });
-
-    await db.logActivity('AI_MODEL_CREATED', 'AI_MODEL', id, `إضافة نموذج جديد: ${modelData.modelId}`, admin.username);
+    
+    await db.logActivity('AI_MODEL_CREATED', 'AI_MODEL', id, `ط¥ط¶ط§ظپط© ظ†ظ…ظˆط°ط¬ ط¬ط¯ظٹط¯: ${modelData.modelId}`, admin.username);
     res.json({ success: true, model: newModel });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في إنشاء النموذج' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط¥ظ†ط´ط§ط، ط§ظ„ظ†ظ…ظˆط°ط¬' });
   }
 });
 
@@ -2302,12 +2432,12 @@ app.patch('/api/admin/ai/models/:id', requireAdmin, async (req: Request, res: Re
     const admin = (req as any).admin;
     const updates = req.body;
     const success = await db.updateAIModelDetails(id, updates);
-    if (!success) return res.status(404).json({ success: false, error: 'النموذج غير موجود' });
-
-    await db.logActivity('AI_MODEL_UPDATED', 'AI_MODEL', id, `تعديل إعدادات النموذج: ${id}`, admin.username);
+    if (!success) return res.status(404).json({ success: false, error: 'ط§ظ„ظ†ظ…ظˆط°ط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    
+    await db.logActivity('AI_MODEL_UPDATED', 'AI_MODEL', id, `طھط¹ط¯ظٹظ„ ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ†ظ…ظˆط°ط¬: ${id}`, admin.username);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحديث النموذج' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط¯ظٹط« ط§ظ„ظ†ظ…ظˆط°ط¬' });
   }
 });
 
@@ -2316,12 +2446,12 @@ app.delete('/api/admin/ai/models/:id', requireAdmin, async (req: Request, res: R
     const { id } = req.params;
     const admin = (req as any).admin;
     const success = await db.deleteAIModel(id);
-    if (!success) return res.status(404).json({ success: false, error: 'النموذج غير موجود' });
-
-    await db.logActivity('AI_MODEL_DELETED', 'AI_MODEL', id, `حذف النموذج: ${id}`, admin.username);
+    if (!success) return res.status(404).json({ success: false, error: 'ط§ظ„ظ†ظ…ظˆط°ط¬ ط؛ظٹط± ظ…ظˆط¬ظˆط¯' });
+    
+    await db.logActivity('AI_MODEL_DELETED', 'AI_MODEL', id, `ط­ط°ظپ ط§ظ„ظ†ظ…ظˆط°ط¬: ${id}`, admin.username);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في حذف النموذج' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ ط­ط°ظپ ط§ظ„ظ†ظ…ظˆط°ط¬' });
   }
 });
 
@@ -2330,7 +2460,7 @@ app.get('/api/admin/ai/settings', requireAdmin, async (req: Request, res: Respon
     const settings = await db.getAISettings();
     res.json({ success: true, settings });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل الإعدادات' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ' });
   }
 });
 
@@ -2339,11 +2469,11 @@ app.patch('/api/admin/ai/settings', requireAdmin, async (req: Request, res: Resp
     const admin = (req as any).admin;
     const updates = req.body;
     const settings = await db.updateAISettings(updates);
-
-    await db.logActivity('AI_SETTINGS_UPDATED', 'AI_SETTINGS', 'global', `تعديل سياسات التوجيه والتعافي`, admin.username);
+    
+    await db.logActivity('AI_SETTINGS_UPDATED', 'AI_SETTINGS', 'global', `طھط¹ط¯ظٹظ„ ط³ظٹط§ط³ط§طھ ط§ظ„طھظˆط¬ظٹظ‡ ظˆط§ظ„طھط¹ط§ظپظٹ`, admin.username);
     res.json({ success: true, settings });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحديث الإعدادات' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ط¯ظٹط« ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ' });
   }
 });
 
@@ -2352,7 +2482,7 @@ app.get('/api/admin/ai/usage/stats', requireAdmin, async (req: Request, res: Res
     const stats = await db.getAIUsageStats();
     res.json({ success: true, stats });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل إحصائيات الاستخدام' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ط¥ط­طµط§ط¦ظٹط§طھ ط§ظ„ط§ط³طھط®ط¯ط§ظ…' });
   }
 });
 
@@ -2381,7 +2511,7 @@ app.get('/api/admin/ai/user-keys', requireAdmin, async (req: Request, res: Respo
     }));
     res.json({ success: true, keys });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: 'فشل في تحميل مفاتيح المستخدمين' });
+    res.status(500).json({ success: false, error: 'ظپط´ظ„ ظپظٹ طھط­ظ…ظٹظ„ ظ…ظپط§طھظٹط­ ط§ظ„ظ…ط³طھط®ط¯ظ…ظٹظ†' });
   }
 });
 
@@ -2391,14 +2521,17 @@ app.get('/api/admin/ai/user-keys', requireAdmin, async (req: Request, res: Respo
 async function startServer() {
   // Start HTTP server immediately
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Kayan Store server listening on port ${PORT} (http://localhost:${PORT})`);
+    console.log(`ًںڑ€ Kayan Store server listening on port ${PORT} (http://localhost:${PORT})`);
   });
 
   // Asynchronously initialize database
   db.initialize().then(() => {
-    console.log('✅ Database initialized successfully');
+    console.log('âœ… Database initialized successfully');
+    newsEngine.startScheduler().catch(err => {
+      console.error('Failed to start news scheduler:', err);
+    });
   }).catch(err => {
-    console.error('❌ Database initialization error:', err?.message || err);
+    console.error('â‌Œ Database initialization error:', err?.message || err);
   });
 
   if (!IS_PROD) {
@@ -2424,7 +2557,7 @@ async function startServer() {
     });
   } else {
     const distPath = path.resolve(process.cwd(), 'dist');
-    console.log(`🚀 Kayan Store production server serving compiled static files from ${distPath} on port ${PORT}`);
+    console.log(`ًںڑ€ Kayan Store production server serving compiled static files from ${distPath} on port ${PORT}`);
     app.use(express.static(distPath));
     app.get('*', (req: Request, res: Response) => {
       res.sendFile(path.join(distPath, 'index.html'));
@@ -2433,3 +2566,4 @@ async function startServer() {
 }
 
 startServer();
+

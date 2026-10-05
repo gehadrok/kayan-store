@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import type { Product } from '../../types.ts';
-import {
-  Search, Filter, ShoppingBag, BookOpen, Smartphone, Laptop,
+import { 
+  Search, Filter, ShoppingBag, BookOpen, Smartphone, Laptop, 
   FileCode, Video, Music, Palette, FileText, ChevronRight,
   Sparkles, Check, ArrowRight, ArrowLeft, RefreshCw
 } from 'lucide-react';
@@ -106,7 +106,7 @@ export const ProductCatalogPage: React.FC<ProductCatalogPageProps> = ({ onNaviga
   return (
     <div className="min-h-screen bg-slate-50 py-10" dir={dir}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
+        
         {/* Header Banner */}
         <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 p-8 sm:p-12 text-white shadow-xl mb-10 relative overflow-hidden">
           <div className="absolute -top-24 -end-24 w-96 h-96 rounded-full bg-sky-500/10 blur-3xl pointer-events-none" />

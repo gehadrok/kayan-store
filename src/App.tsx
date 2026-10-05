@@ -6,6 +6,7 @@ import { Application, Release } from './types.ts';
 import { Navbar } from './components/layout/Navbar.tsx';
 import { Footer } from './components/layout/Footer.tsx';
 import { DownloadModal } from './components/common/DownloadModal.tsx';
+import { StoreAnnouncementsBar } from './components/common/StoreAnnouncementsBar.tsx';
 import { HomePage } from './pages/HomePage.tsx';
 import { CatalogPage } from './pages/CatalogPage.tsx';
 import { ProductCatalogPage } from './pages/products/CatalogPage.tsx';
@@ -23,6 +24,11 @@ import { AIWorkspacePage } from './pages/ai/AIWorkspacePage.tsx';
 import { AIDocumentsListPage } from './pages/ai/AIDocumentsListPage.tsx';
 import { AIDocumentDetailPage } from './pages/ai/AIDocumentDetailPage.tsx';
 import { AppBuilderPage } from './pages/ai/AppBuilderPage.tsx';
+import { NewsSection } from './components/news/NewsSection.tsx';
+import { NewsDetailPage } from './pages/news/NewsDetailPage.tsx';
+import { CVHubPage } from './pages/cv/CVHubPage.tsx';
+import { CVEditorPage } from './pages/cv/CVEditorPage.tsx';
+import { NotFoundPage } from './pages/NotFoundPage.tsx';
 
 export function AppContent() {
   const [currentPath, setCurrentPath] = useState<string>(() => {
@@ -170,8 +176,26 @@ export function AppContent() {
       return <AIDocumentsListPage onNavigate={navigate} />;
     }
 
-    if (currentPath === '/ai/app-builder') {
-      return <AppBuilderPage onNavigate={navigate} />;
+    if (currentPath.startsWith('/news/')) {
+      const articleId = currentPath.replace('/news/', '').split('/')[0];
+      if (articleId && articleId !== 'news') {
+        return <NewsDetailPage articleId={articleId} onNavigate={navigate} />;
+      }
+    }
+
+    if (currentPath === '/news' || currentPath.startsWith('/news?')) {
+      return <NewsSection onNavigate={navigate} />;
+    }
+
+    if (currentPath.startsWith('/cv/')) {
+      const cvId = currentPath.replace('/cv/', '').split('/')[0];
+      if (cvId) {
+        return <CVEditorPage cvId={cvId} onNavigate={navigate} />;
+      }
+    }
+
+    if (currentPath === '/cv' || currentPath.startsWith('/cv?')) {
+      return <CVHubPage onNavigate={navigate} />;
     }
 
     if (currentPath === '/ai' || currentPath.startsWith('/ai')) {
@@ -182,19 +206,13 @@ export function AppContent() {
       return <AdminDashboard onNavigate={navigate} />;
     }
 
-    // Default Fallback
-    return (
-      <HomePage
-        apps={apps}
-        onNavigate={navigate}
-        onDownloadClick={handleOpenDownload}
-      />
-    );
+    // 404 Fallback
+    return <NotFoundPage onNavigate={navigate} />;
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 selection:bg-sky-500/20 selection:text-sky-900">
-
+      
       {/* Schema.org Structured Data */}
       <script
         type="application/ld+json"
@@ -222,6 +240,9 @@ export function AppContent() {
           })
         }}
       />
+
+      {/* Store Dynamic Announcements Bar */}
+      <StoreAnnouncementsBar onNavigate={navigate} />
 
       {/* Navigation Header */}
       <Navbar currentPath={currentPath} onNavigate={navigate} />

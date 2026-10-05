@@ -27,7 +27,7 @@ async function runReadiness() {
   await test('Database: Schema integrity', async () => {
     // Check if critical tables exist (by querying them)
     const criticalTables = ['ai_providers', 'ai_models', 'ai_settings', 'ai_usages', 'ai_user_keys', 'ai_projects', 'ai_assets', 'users', 'activity_logs'];
-
+    
     if ((db as any).isPg) {
       const pool = (db as any).pool;
       for (const table of criticalTables) {
@@ -78,11 +78,11 @@ async function runReadiness() {
       // If we only have gemini as TEXT provider, this should throw
       const activeTextProviders = (await db.getAIModels())
         .filter(m => m.capabilities.includes('TEXT') && m.active);
-
+      
       // If no other LIVE provider has TEXT, it should throw
       const liveProviders = (await db.getAIProviders()).filter(p => p.status === 'LIVE').map(p => p.id);
       const compatibleLive = activeTextProviders.filter(m => liveProviders.includes(m.providerId));
-
+      
       if (compatibleLive.length === 0) {
         throw new Error('Should have thrown AI_MODEL_CAPABILITY_MISMATCH');
       }
@@ -114,13 +114,13 @@ async function runReadiness() {
     // Force all TEXT models to be PAID except one
     const allModels = await db.getAIModels();
     const textModels = allModels.filter(m => m.capabilities.includes('TEXT'));
-
+    
     await (db as any).pool?.query("UPDATE ai_settings SET allow_paid_fallback = false");
     if (data) data.aiSettings[0].allowPaidFallback = false;
 
     const result = await AIModelRouter.route({ capability: 'TEXT' });
     const fallbacks = result.candidates.slice(1);
-
+    
     for (const fb of fallbacks) {
       const model = allModels.find(m => m.modelId === fb.modelId);
       if (model?.freeTierStatus === 'PAID' && !fb.isCustomKey) {
@@ -138,10 +138,10 @@ async function runReadiness() {
     const plaintext = 'sk-production-ready-key-long-enough';
     const encrypted = encrypt(plaintext);
     if (encrypted.encryptedText === plaintext) throw new Error('Encryption failed (returned plaintext)');
-
+    
     const decrypted = decrypt(encrypted.encryptedText, encrypted.iv, encrypted.tag);
     if (decrypted !== plaintext) throw new Error('Decryption failed');
-
+    
     console.log('  - AES-256-GCM verified.');
   });
 

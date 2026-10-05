@@ -2,13 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-export type PreviewLifecycleStatus =
-  | 'NOT_READY'
-  | 'READY'
-  | 'BUILDING'
-  | 'RUNNING'
-  | 'FAILED'
-  | 'STOPPED'
+export type PreviewLifecycleStatus = 
+  | 'NOT_READY' 
+  | 'READY' 
+  | 'BUILDING' 
+  | 'RUNNING' 
+  | 'FAILED' 
+  | 'STOPPED' 
   | 'EXPIRED';
 
 export interface PreviewArtifact {
@@ -104,7 +104,7 @@ export class PreviewManager {
 
     for (const file of allFiles) {
       const filePath = String(file.path || '');
-
+      
       // Path traversal & absolute path check
       if (
         filePath.includes('..') ||
@@ -120,7 +120,7 @@ export class PreviewManager {
       }
 
       const content = String(file.content || '');
-
+      
       // Forbidden command scan
       for (const cmd of FORBIDDEN_COMMANDS) {
         if (content.includes(cmd)) {

@@ -5,7 +5,8 @@ import bcrypt from 'bcryptjs';
 import AdmZip from 'adm-zip';
 import pkg from 'pg';
 const { Pool } = pkg;
-import { Application, Release, Screenshot, AdminUser, Session, ActivityLog, Product, ProductFile, Media, User, UserSession, Favorite, Review, Download, Entitlement, AIProject, AIAsset, AIDocument, AIProviderConfig, AIModelConfig, AIUserKeyConfig, AISettings, AIUsageStats } from '../types.ts';
+import { Application, Release, Screenshot, AdminUser, Session, ActivityLog, Product, ProductFile, Media, User, UserSession, Favorite, Review, Download, Entitlement, AIProject, AIAsset, AIDocument, AIProviderConfig, AIModelConfig, AIUserKeyConfig, AISettings, AIUsageStats, Announcement } from '../types.ts';
+import { UserCV } from '../types/cv.ts';
 import { LocalDiskArtifactStorage, GitHubReleaseArtifactStorage, IArtifactStorage, getArtifactStorage } from './storage/index.ts';
 import { encrypt, decrypt } from './ai/utils/encryption.ts';
 
@@ -33,6 +34,8 @@ export interface DatabaseSchema {
   aiUserKeys?: AIUserKeyConfig[];
   aiSettings?: AISettings[];
   aiUsages?: any[];
+  announcements?: Announcement[];
+  cvs?: UserCV[];
 }
 
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -318,8 +321,8 @@ export const defaultModels: AIModelConfig[] = [
     defaultForCapability: 'TEXT',
     priority: 10,
     capabilities: [
-      'TEXT', 'VISION', 'CODE', 'SCREENSHOT_TO_CODE', 'DOCUMENT_ANALYSIS',
-      'IMAGE_TO_PROMPT', 'UI_ANALYSIS', 'APP_REQUIREMENTS', 'APP_ARCHITECTURE',
+      'TEXT', 'VISION', 'CODE', 'SCREENSHOT_TO_CODE', 'DOCUMENT_ANALYSIS', 
+      'IMAGE_TO_PROMPT', 'UI_ANALYSIS', 'APP_REQUIREMENTS', 'APP_ARCHITECTURE', 
       'APP_PIR', 'APP_DATABASE', 'APP_BACKEND', 'APP_FRONTEND', 'APP_TESTS'
     ],
     pricingClass: 'FREE',
@@ -446,7 +449,7 @@ class PostgresOrJsonDatabase {
     if (!this.jsonData.aiProjects) this.jsonData.aiProjects = [];
     if (!this.jsonData.aiAssets) this.jsonData.aiAssets = [];
     if (!this.jsonData.aiDocuments) this.jsonData.aiDocuments = [];
-
+    
     if (!this.jsonData.aiProviders || this.jsonData.aiProviders.length === 0) {
       this.jsonData.aiProviders = [...defaultProviders];
     }
@@ -462,7 +465,44 @@ class PostgresOrJsonDatabase {
     if (!this.jsonData.aiUsages) {
       this.jsonData.aiUsages = [];
     }
-
+    if (!this.jsonData.announcements || this.jsonData.announcements.length === 0) {
+      this.jsonData.announcements = [
+        {
+          id: 'ann_welcome',
+          title: 'مرحباً بك في منصة كيان للمنتجات والبرمجيات',
+          message: 'اكتشف أحدث التطبيقات والأدوات الرقمية المصممة بعناية لتلبية احتياجاتك بكل أمان وخصوصية.',
+          type: 'info',
+          icon: 'Sparkles',
+          link: '/apps',
+          startAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+          endAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+          priority: 10,
+          displayOrder: 1,
+          active: true,
+          dismissible: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'ann_pdf',
+          title: 'إصدار جديد: كيان PDF 1.0.0',
+          message: 'الأداة الاحترافية لإنشاء وضغط ودمج مستندات PDF محلياً بدون إنترنت بنسبة 100%.',
+          type: 'new_product',
+          icon: 'FileText',
+          productId: 'prod_kayan_pdf',
+          link: '/products/kayan-pdf',
+          startAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+          endAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+          priority: 20,
+          displayOrder: 2,
+          active: true,
+          dismissible: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+    }
+    
     return this.jsonData;
   }
 
@@ -855,7 +895,100 @@ class PostgresOrJsonDatabase {
         CREATE INDEX IF NOT EXISTS idx_ai_user_keys_user ON ai_user_keys(user_id);
         CREATE INDEX IF NOT EXISTS idx_ai_usages_provider ON ai_usages(provider);
         CREATE INDEX IF NOT EXISTS idx_ai_usages_capability ON ai_usages(capability);
+
+        CREATE TABLE IF NOT EXISTS announcements (
+          id VARCHAR(64) PRIMARY KEY,
+          title TEXT NOT NULL,
+          message TEXT NOT NULL,
+          type VARCHAR(64) NOT NULL DEFAULT 'info',
+          icon VARCHAR(128),
+          link TEXT,
+          product_id VARCHAR(64) REFERENCES products(id) ON DELETE SET NULL,
+          start_at TIMESTAMPTZ NOT NULL,
+          end_at TIMESTAMPTZ NOT NULL,
+          priority INT NOT NULL DEFAULT 0,
+          display_order INT NOT NULL DEFAULT 0,
+          active BOOLEAN NOT NULL DEFAULT TRUE,
+          dismissible BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(active, start_at, end_at);
+
+        CREATE TABLE IF NOT EXISTS user_cvs (
+          id VARCHAR(64) PRIMARY KEY,
+          user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          language VARCHAR(8) NOT NULL DEFAULT 'ar',
+          template VARCHAR(64) NOT NULL DEFAULT 'professional',
+          status VARCHAR(32) NOT NULL DEFAULT 'draft',
+          is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+          personal_info JSONB NOT NULL DEFAULT '{}',
+          summary TEXT,
+          experiences JSONB NOT NULL DEFAULT '[]',
+          education JSONB NOT NULL DEFAULT '[]',
+          skills JSONB NOT NULL DEFAULT '[]',
+          projects JSONB NOT NULL DEFAULT '[]',
+          certificates JSONB NOT NULL DEFAULT '[]',
+          languages JSONB NOT NULL DEFAULT '[]',
+          links JSONB NOT NULL DEFAULT '[]',
+          ats_score INT DEFAULT 0,
+          ats_feedback JSONB DEFAULT '{}',
+          target_job_title VARCHAR(255),
+          target_job_description TEXT,
+          design_spec JSONB NOT NULL DEFAULT '{}',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_user_cvs_user_id ON user_cvs(user_id);
       `);
+
+      // Seed Announcements in PG if empty
+      const annCountRes = await this.pool.query('SELECT COUNT(*) FROM announcements');
+      if (parseInt(annCountRes.rows[0].count, 10) === 0) {
+        const defaultAnns = [
+          {
+            id: 'ann_welcome',
+            title: 'مرحباً بك في منصة كيان للمنتجات والبرمجيات',
+            message: 'اكتشف أحدث التطبيقات والأدوات الرقمية المصممة بعناية لتلبية احتياجاتك بكل أمان وخصوصية.',
+            type: 'info',
+            icon: 'Sparkles',
+            link: '/apps',
+            startAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+            endAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+            priority: 10,
+            displayOrder: 1,
+            active: true,
+            dismissible: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'ann_pdf',
+            title: 'إصدار جديد: كيان PDF 1.0.0',
+            message: 'الأداة الاحترافية لإنشاء وضغط ودمج مستندات PDF محلياً بدون إنترنت بنسبة 100%.',
+            type: 'new_product',
+            icon: 'FileText',
+            productId: 'prod_kayan_pdf',
+            link: '/products/kayan-pdf',
+            startAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+            endAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+            priority: 20,
+            displayOrder: 2,
+            active: true,
+            dismissible: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        ];
+        for (const a of defaultAnns) {
+          await this.pool.query(
+            `INSERT INTO announcements (id, title, message, type, icon, link, product_id, start_at, end_at, priority, display_order, active, dismissible, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+            [a.id, a.title, a.message, a.type, a.icon, a.link, a.productId, a.startAt, a.endAt, a.priority, a.displayOrder, a.active, a.dismissible, a.createdAt, a.updatedAt]
+          );
+        }
+      }
 
       // Seed AI Providers & Models in PG if empty
       const provCountRes = await this.pool.query('SELECT COUNT(*) FROM ai_providers');
@@ -989,11 +1122,11 @@ class PostgresOrJsonDatabase {
       console.log('📦 PostgreSQL database connected and verified successfully.');
     } catch (err: any) {
       const sanitizedMsg = (err?.message || '').replace(DATABASE_URL || '', '[REDACTED_DATABASE_URL]');
-      console.error('Failed to initialize PostgreSQL tables:', sanitizedMsg);
       if (IS_PROD || process.env.FORCE_POSTGRES === 'true' || process.env.STRICT_DB === 'true') {
+        console.error('Failed to initialize PostgreSQL tables in production:', sanitizedMsg);
         throw new Error(`PostgreSQL initialization failed in production (no JSON fallback allowed): ${sanitizedMsg}`);
       } else {
-        console.warn('⚠️ Falling back to local JSON store due to PostgreSQL connection/auth failure.');
+        console.log('ℹ️ Development environment: Operating with local storage mode.');
         this.isPg = false;
         try {
           if (this.pool) await this.pool.end();
@@ -2811,19 +2944,19 @@ class PostgresOrJsonDatabase {
         `INSERT INTO ai_usages (id, user_id, project_id, job_id, provider, model, capability, status, retry_count, fallback_used, is_paid, started_at, completed_at, duration_ms, metadata)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [
-          id,
-          params.userId || null,
-          params.projectId || null,
-          params.jobId || null,
-          params.provider,
-          params.model,
-          params.capability,
-          params.status,
-          params.retryCount || 0,
-          params.fallbackUsed || false,
+          id, 
+          params.userId || null, 
+          params.projectId || null, 
+          params.jobId || null, 
+          params.provider, 
+          params.model, 
+          params.capability, 
+          params.status, 
+          params.retryCount || 0, 
+          params.fallbackUsed || false, 
           params.isPaid || false,
-          params.startedAt,
-          params.completedAt,
+          params.startedAt, 
+          params.completedAt, 
           params.durationMs || null,
           JSON.stringify(params.metadata || {})
         ]
@@ -2885,7 +3018,7 @@ class PostgresOrJsonDatabase {
     }
     return false;
   }
-
+  
   private mapDocumentFromPg(r: any): AIDocument {
     return {
       id: r.id,
@@ -2931,12 +3064,12 @@ class PostgresOrJsonDatabase {
     const now = new Date().toISOString();
     if (this.isPg && this.pool) {
       const res = await this.pool.query(
-        `UPDATE ai_providers
-         SET display_name = COALESCE($1, display_name),
-             status = COALESCE($2, status),
-             type = COALESCE($3, type),
-             base_url = COALESCE($4, base_url),
-             updated_at = $5
+        `UPDATE ai_providers 
+         SET display_name = COALESCE($1, display_name), 
+             status = COALESCE($2, status), 
+             type = COALESCE($3, type), 
+             base_url = COALESCE($4, base_url), 
+             updated_at = $5 
          WHERE id = $6`,
         [updates.displayName, updates.status, updates.type, updates.baseUrl, now, id]
       );
@@ -3109,17 +3242,17 @@ class PostgresOrJsonDatabase {
     if (this.isPg && this.pool) {
       const queryParts: string[] = ['updated_at = $' + (Object.keys(updates).length + 2)];
       const values: any[] = [now, id];
-
+      
       let paramIdx = 1;
       const keys = Object.keys(updates).filter(k => k !== 'id' && k !== 'createdAt' && k !== 'updatedAt');
-
+      
       for (const k of keys) {
         const dbCol = k.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
         queryParts.unshift(`${dbCol} = $${paramIdx}`);
         values.unshift((updates as any)[k]);
         paramIdx++;
       }
-
+      
       const q = `UPDATE ai_models SET ${queryParts.join(', ')} WHERE id = $${paramIdx}`;
       const res = await this.pool.query(q, values);
       return (res.rowCount || 0) > 0;
@@ -3192,10 +3325,10 @@ class PostgresOrJsonDatabase {
     const now = new Date().toISOString();
     if (this.isPg && this.pool) {
       await this.pool.query(
-        `UPDATE ai_settings
-         SET routing_mode = COALESCE($1, routing_mode),
-             allow_paid_fallback = COALESCE($2, allow_paid_fallback),
-             max_retry_attempts = COALESCE($3, max_retry_attempts),
+        `UPDATE ai_settings 
+         SET routing_mode = COALESCE($1, routing_mode), 
+             allow_paid_fallback = COALESCE($2, allow_paid_fallback), 
+             max_retry_attempts = COALESCE($3, max_retry_attempts), 
              updated_at = $4`,
         [updates.routingMode, updates.allowPaidFallback, updates.maxRetryAttempts, now]
       );
@@ -3215,9 +3348,9 @@ class PostgresOrJsonDatabase {
   public async getAIUsageStats(): Promise<AIUsageStats[]> {
     if (this.isPg && this.pool) {
       const res = await this.pool.query(`
-        SELECT
-          provider as "providerId",
-          model as "modelId",
+        SELECT 
+          provider as "providerId", 
+          model as "modelId", 
           capability,
           COUNT(*) FILTER (WHERE status = 'completed') as "successCount",
           COUNT(*) FILTER (WHERE status = 'failed' AND (metadata->>'error' NOT LIKE '%quota%' AND metadata->>'error' NOT LIKE '%Rate limit%')) as "failedCount",
@@ -3302,7 +3435,7 @@ class PostgresOrJsonDatabase {
   public async saveUserKey(userId: string, providerId: string, apiKey: string): Promise<AIUserKeyConfig> {
     const now = new Date().toISOString();
     const { encryptedText, iv, tag } = encrypt(apiKey);
-
+    
     const existing = await this.getUserKeyForProvider(userId, providerId);
     if (existing) {
       if (this.isPg && this.pool) {
@@ -3340,7 +3473,7 @@ class PostgresOrJsonDatabase {
         createdAt: now,
         updatedAt: now
       };
-
+      
       if (this.isPg && this.pool) {
         await this.pool.query(
           `INSERT INTO ai_user_keys (id, user_id, provider_id, encrypted_api_key, iv_hex, tag_hex, created_at, updated_at)
@@ -3368,6 +3501,432 @@ class PostgresOrJsonDatabase {
       return data.aiUserKeys.length < initial;
     }
   }
+
+  // ==========================================
+  // ANNOUNCEMENTS & PROMOTIONS METHODS
+  // ==========================================
+
+  public async getAnnouncements(activeOnly: boolean = false): Promise<Announcement[]> {
+    const pool = this.pool;
+    const nowISO = new Date().toISOString();
+    if (this.isPg && pool) {
+      let query = 'SELECT * FROM announcements';
+      const params: any[] = [];
+      if (activeOnly) {
+        query += ' WHERE active = true AND start_at <= $1 AND end_at >= $2';
+        params.push(nowISO, nowISO);
+      }
+      query += ' ORDER BY priority DESC, display_order ASC, created_at DESC';
+      const res = await pool.query(query, params);
+      return res.rows.map(r => ({
+        id: r.id,
+        title: r.title,
+        message: r.message,
+        type: r.type,
+        icon: r.icon || undefined,
+        link: r.link || undefined,
+        productId: r.product_id || undefined,
+        startAt: r.start_at,
+        endAt: r.end_at,
+        priority: r.priority,
+        displayOrder: r.display_order,
+        active: r.active,
+        dismissible: r.dismissible,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+    } else {
+      const data = this.getJsonData();
+      if (!data.announcements) data.announcements = [];
+      let list = data.announcements;
+      if (activeOnly) {
+        const now = new Date().getTime();
+        list = list.filter(a => {
+          if (!a.active) return false;
+          const start = new Date(a.startAt).getTime();
+          const end = new Date(a.endAt).getTime();
+          return now >= start && now <= end;
+        });
+      }
+      return [...list].sort((a, b) => {
+        if (b.priority !== a.priority) return b.priority - a.priority;
+        if (a.displayOrder !== b.displayOrder) return a.displayOrder - b.displayOrder;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+  }
+
+  public async getAnnouncementById(id: string): Promise<Announcement | null> {
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      const res = await pool.query('SELECT * FROM announcements WHERE id = $1', [id]);
+      if (res.rows.length === 0) return null;
+      const r = res.rows[0];
+      return {
+        id: r.id,
+        title: r.title,
+        message: r.message,
+        type: r.type,
+        icon: r.icon || undefined,
+        link: r.link || undefined,
+        productId: r.product_id || undefined,
+        startAt: r.start_at,
+        endAt: r.end_at,
+        priority: r.priority,
+        displayOrder: r.display_order,
+        active: r.active,
+        dismissible: r.dismissible,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      };
+    } else {
+      const data = this.getJsonData();
+      const found = (data.announcements || []).find(a => a.id === id);
+      return found || null;
+    }
+  }
+
+  public async createAnnouncement(params: Omit<Announcement, 'id' | 'createdAt' | 'updatedAt'>, actor: string): Promise<Announcement> {
+    const id = 'ann_' + crypto.randomBytes(6).toString('hex');
+    const now = new Date().toISOString();
+    const announcement: Announcement = {
+      ...params,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      await pool.query(
+        `INSERT INTO announcements (id, title, message, type, icon, link, product_id, start_at, end_at, priority, display_order, active, dismissible, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [
+          announcement.id,
+          announcement.title,
+          announcement.message,
+          announcement.type,
+          announcement.icon || null,
+          announcement.link || null,
+          announcement.productId || null,
+          announcement.startAt,
+          announcement.endAt,
+          announcement.priority,
+          announcement.displayOrder,
+          announcement.active,
+          announcement.dismissible,
+          announcement.createdAt,
+          announcement.updatedAt
+        ]
+      );
+    } else {
+      const data = this.getJsonData();
+      if (!data.announcements) data.announcements = [];
+      data.announcements.push(announcement);
+      this.saveJson(data);
+    }
+    await this.logActivity('CREATE_ANNOUNCEMENT', 'ANNOUNCEMENT', id, `تم إنشاء الإعلان: ${announcement.title}`, actor);
+    return announcement;
+  }
+
+  public async updateAnnouncement(id: string, updates: Partial<Announcement>, actor: string): Promise<Announcement | undefined> {
+    const existing = await this.getAnnouncementById(id);
+    if (!existing) return undefined;
+
+    const now = new Date().toISOString();
+    const updated: Announcement = {
+      ...existing,
+      ...updates,
+      id,
+      updatedAt: now
+    };
+
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      await pool.query(
+        `UPDATE announcements SET
+          title = $1, message = $2, type = $3, icon = $4, link = $5, product_id = $6,
+          start_at = $7, end_at = $8, priority = $9, display_order = $10, active = $11, dismissible = $12, updated_at = $13
+         WHERE id = $14`,
+        [
+          updated.title,
+          updated.message,
+          updated.type,
+          updated.icon || null,
+          updated.link || null,
+          updated.productId || null,
+          updated.startAt,
+          updated.endAt,
+          updated.priority,
+          updated.displayOrder,
+          updated.active,
+          updated.dismissible,
+          updated.updatedAt,
+          id
+        ]
+      );
+    } else {
+      const data = this.getJsonData();
+      if (!data.announcements) data.announcements = [];
+      const idx = data.announcements.findIndex(a => a.id === id);
+      if (idx !== -1) {
+        data.announcements[idx] = updated;
+        this.saveJson(data);
+      }
+    }
+    await this.logActivity('UPDATE_ANNOUNCEMENT', 'ANNOUNCEMENT', id, `تم تحديث الإعلان: ${updated.title}`, actor);
+    return updated;
+  }
+
+  public async deleteAnnouncement(id: string, actor: string): Promise<boolean> {
+    const existing = await this.getAnnouncementById(id);
+    if (!existing) return false;
+
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      const res = await pool.query('DELETE FROM announcements WHERE id = $1', [id]);
+      return (res.rowCount || 0) > 0;
+    } else {
+      const data = this.getJsonData();
+      if (!data.announcements) data.announcements = [];
+      const initial = data.announcements.length;
+      data.announcements = data.announcements.filter(a => a.id !== id);
+      this.saveJson(data);
+      return data.announcements.length < initial;
+    }
+  }
+
+  public async getTickerSettings(): Promise<{ speed: number; height: number }> {
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      try {
+        await pool.query("ALTER TABLE news_settings ADD COLUMN IF NOT EXISTS ticker_speed_int INT NOT NULL DEFAULT 35");
+        await pool.query("ALTER TABLE news_settings ADD COLUMN IF NOT EXISTS ticker_height INT NOT NULL DEFAULT 40");
+        const res = await pool.query("SELECT ticker_speed_int, ticker_height FROM news_settings WHERE id = 'default'");
+        if (res.rows.length > 0) {
+          return {
+            speed: res.rows[0].ticker_speed_int || 35,
+            height: res.rows[0].ticker_height || 40
+          };
+        }
+      } catch (e) {
+        console.error('Failed to query ticker settings from PG:', e);
+      }
+      return { speed: 35, height: 40 };
+    } else {
+      const data = this.getJsonData();
+      return {
+        speed: (data as any).tickerSpeedVal || 35,
+        height: (data as any).tickerHeightVal || 40
+      };
+    }
+  }
+
+  public async updateTickerSettings(speed: number, height: number): Promise<{ speed: number; height: number }> {
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      try {
+        await pool.query("ALTER TABLE news_settings ADD COLUMN IF NOT EXISTS ticker_speed_int INT NOT NULL DEFAULT 35");
+        await pool.query("ALTER TABLE news_settings ADD COLUMN IF NOT EXISTS ticker_height INT NOT NULL DEFAULT 40");
+        await pool.query(
+          "INSERT INTO news_settings (id, ticker_speed_int, ticker_height) VALUES ('default', $1, $2) ON CONFLICT (id) DO UPDATE SET ticker_speed_int = $1, ticker_height = $2, updated_at = NOW()",
+          [speed, height]
+        );
+      } catch (e) {
+        console.error('Failed to update ticker settings in PG:', e);
+      }
+    } else {
+      const data = this.getJsonData();
+      (data as any).tickerSpeedVal = speed;
+      (data as any).tickerHeightVal = height;
+      this.saveJson(data);
+    }
+    return { speed, height };
+  }
+
+  private mapPgCv(row: any): UserCV {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      title: row.title,
+      language: row.language,
+      template: row.template,
+      status: row.status,
+      isPrimary: row.is_primary,
+      personalInfo: row.personal_info || {},
+      summary: row.summary || '',
+      experiences: row.experiences || [],
+      education: row.education || [],
+      skills: row.skills || [],
+      projects: row.projects || [],
+      certificates: row.certificates || [],
+      languages: row.languages || [],
+      links: row.links || [],
+      atsScore: row.ats_score || 0,
+      targetJobTitle: row.target_job_title || '',
+      targetJobDescription: row.target_job_description || '',
+      designSpec: row.design_spec || undefined,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+
+  public async getUserCVs(userId: string): Promise<UserCV[]> {
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      const res = await pool.query('SELECT * FROM user_cvs WHERE user_id = $1 ORDER BY updated_at DESC', [userId]);
+      return res.rows.map(r => this.mapPgCv(r));
+    } else {
+      const data = this.getJsonData();
+      if (!data.cvs) data.cvs = [];
+      return data.cvs.filter((c: any) => c.userId === userId).sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    }
+  }
+
+  public async getCVById(id: string, userId: string): Promise<UserCV | null> {
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      const res = await pool.query('SELECT * FROM user_cvs WHERE id = $1 AND user_id = $2', [id, userId]);
+      if (res.rows.length === 0) return null;
+      return this.mapPgCv(res.rows[0]);
+    } else {
+      const data = this.getJsonData();
+      if (!data.cvs) data.cvs = [];
+      const cv = data.cvs.find((c: any) => c.id === id && c.userId === userId);
+      return cv || null;
+    }
+  }
+
+  public async createCV(userId: string, data: any): Promise<UserCV> {
+    const id = 'cv_' + crypto.randomBytes(6).toString('hex');
+    const now = new Date().toISOString();
+    const cv: UserCV = {
+      id,
+      userId,
+      title: data.title || 'سيرة ذاتية جديدة',
+      language: data.language || 'ar',
+      template: data.template || 'professional',
+      status: data.status || 'draft',
+      isPrimary: Boolean(data.isPrimary),
+      personalInfo: data.personalInfo || {},
+      summary: data.summary || '',
+      experiences: data.experiences || [],
+      education: data.education || [],
+      skills: data.skills || [],
+      projects: data.projects || [],
+      certificates: data.certificates || [],
+      languages: data.languages || [],
+      links: data.links || [],
+      atsScore: data.atsScore || 0,
+      targetJobTitle: data.targetJobTitle || '',
+      targetJobDescription: data.targetJobDescription || '',
+      designSpec: data.designSpec || undefined,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      await pool.query(
+        `INSERT INTO user_cvs (
+          id, user_id, title, language, template, status, is_primary, personal_info, summary,
+          experiences, education, skills, projects, certificates, languages, links, ats_score,
+          target_job_title, target_job_description, design_spec, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+        [
+          cv.id, cv.userId, cv.title, cv.language, cv.template, cv.status, cv.isPrimary,
+          JSON.stringify(cv.personalInfo), cv.summary, JSON.stringify(cv.experiences),
+          JSON.stringify(cv.education), JSON.stringify(cv.skills), JSON.stringify(cv.projects),
+          JSON.stringify(cv.certificates), JSON.stringify(cv.languages), JSON.stringify(cv.links),
+          cv.atsScore, cv.targetJobTitle, cv.targetJobDescription, JSON.stringify(cv.designSpec || {}), cv.createdAt, cv.updatedAt
+        ]
+      );
+    } else {
+      const dbData = this.getJsonData();
+      if (!dbData.cvs) dbData.cvs = [];
+      dbData.cvs.unshift(cv);
+      this.saveJson(dbData);
+    }
+
+    return cv;
+  }
+
+  public async updateCV(id: string, userId: string, data: any): Promise<UserCV | null> {
+    const existing = await this.getCVById(id, userId);
+    if (!existing) return null;
+
+    const now = new Date().toISOString();
+    const updated: UserCV = {
+      ...existing,
+      title: data.title !== undefined ? data.title : existing.title,
+      language: data.language !== undefined ? data.language : existing.language,
+      template: data.template !== undefined ? data.template : existing.template,
+      status: data.status !== undefined ? data.status : existing.status,
+      isPrimary: data.isPrimary !== undefined ? data.isPrimary : existing.isPrimary,
+      personalInfo: data.personalInfo !== undefined ? data.personalInfo : existing.personalInfo,
+      summary: data.summary !== undefined ? data.summary : existing.summary,
+      experiences: data.experiences !== undefined ? data.experiences : existing.experiences,
+      education: data.education !== undefined ? data.education : existing.education,
+      skills: data.skills !== undefined ? data.skills : existing.skills,
+      projects: data.projects !== undefined ? data.projects : existing.projects,
+      certificates: data.certificates !== undefined ? data.certificates : existing.certificates,
+      languages: data.languages !== undefined ? data.languages : existing.languages,
+      links: data.links !== undefined ? data.links : existing.links,
+      atsScore: data.atsScore !== undefined ? data.atsScore : existing.atsScore,
+      targetJobTitle: data.targetJobTitle !== undefined ? data.targetJobTitle : existing.targetJobTitle,
+      targetJobDescription: data.targetJobDescription !== undefined ? data.targetJobDescription : existing.targetJobDescription,
+      designSpec: data.designSpec !== undefined ? data.designSpec : existing.designSpec,
+      updatedAt: now
+    };
+
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      await pool.query(
+        `UPDATE user_cvs SET
+          title = $1, language = $2, template = $3, status = $4, is_primary = $5,
+          personal_info = $6, summary = $7, experiences = $8, education = $9,
+          skills = $10, projects = $11, certificates = $12, languages = $13, links = $14,
+          ats_score = $15, target_job_title = $16, target_job_description = $17, 
+          design_spec = $18, updated_at = $19
+         WHERE id = $20 AND user_id = $21`,
+        [
+          updated.title, updated.language, updated.template, updated.status, updated.isPrimary,
+          JSON.stringify(updated.personalInfo), updated.summary, JSON.stringify(updated.experiences),
+          JSON.stringify(updated.education), JSON.stringify(updated.skills), JSON.stringify(updated.projects),
+          JSON.stringify(updated.certificates), JSON.stringify(updated.languages), JSON.stringify(updated.links),
+          updated.atsScore, updated.targetJobTitle, updated.targetJobDescription, 
+          JSON.stringify(updated.designSpec || {}), updated.updatedAt,
+          id, userId
+        ]
+      );
+    } else {
+      const dbData = this.getJsonData();
+      if (!dbData.cvs) dbData.cvs = [];
+      dbData.cvs = dbData.cvs.map((c: any) => c.id === id && c.userId === userId ? updated : c);
+      this.saveJson(dbData);
+    }
+
+    return updated;
+  }
+
+  public async deleteCV(id: string, userId: string): Promise<boolean> {
+    const existing = await this.getCVById(id, userId);
+    if (!existing) return false;
+
+    const pool = this.pool;
+    if (this.isPg && pool) {
+      const res = await pool.query('DELETE FROM user_cvs WHERE id = $1 AND user_id = $2', [id, userId]);
+      return (res.rowCount || 0) > 0;
+    } else {
+      const dbData = this.getJsonData();
+      if (!dbData.cvs) dbData.cvs = [];
+      const initial = dbData.cvs.length;
+      dbData.cvs = dbData.cvs.filter((c: any) => !(c.id === id && c.userId === userId));
+      this.saveJson(dbData);
+      return dbData.cvs.length < initial;
+    }
+  }
 }
 
 export const db = new PostgresOrJsonDatabase();
+export type Database = PostgresOrJsonDatabase;

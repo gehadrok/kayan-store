@@ -1,10 +1,10 @@
 # Kayan | كيان — XLSX Parser Security Remediation Report
 
-**Date:** September 30, 2026
-**Auditor:** Kayan Security Engineering
-**Remediation Target:** Vulnerable SheetJS (`xlsx`) Parser Elimination
-**Remediation Decision:** `REPLACE_XLSX` with Hardened `SafeSpreadsheetProcessor` Architecture
-**Final Status:** **PASS** (Zero Vulnerabilities in `npm audit`, Zero Blockers)
+**Date:** September 30, 2026  
+**Auditor:** Kayan Security Engineering  
+**Remediation Target:** Vulnerable SheetJS (`xlsx`) Parser Elimination  
+**Remediation Decision:** `REPLACE_XLSX` with Hardened `SafeSpreadsheetProcessor` Architecture  
+**Final Status:** **PASS** (Zero Vulnerabilities in `npm audit`, Zero Blockers)  
 
 ---
 

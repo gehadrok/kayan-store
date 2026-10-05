@@ -41,10 +41,10 @@ export class AIModelRouter {
     const liveProviders = new Set(allProviders.filter(p => p.status === 'LIVE').map(p => p.id));
 
     const allModels = await db.getAIModels();
-
+    
     // Filter by LIVE status and basic activity
-    let compatibleModels = allModels.filter(m =>
-      m.active &&
+    let compatibleModels = allModels.filter(m => 
+      m.active && 
       liveProviders.has(m.providerId)
     );
 
@@ -127,7 +127,7 @@ export class AIModelRouter {
     }
 
     // 5. Apply Paid Fallback Policy
-    // If global settings prohibit paid fallback, we remove paid models from candidates
+    // If global settings prohibit paid fallback, we remove paid models from candidates 
     // EXCEPT possibly the primary one if it was explicitly selected by user.
     let finalCandidates = scoredCandidates;
     if (!settings.allowPaidFallback && !freeOnly) {

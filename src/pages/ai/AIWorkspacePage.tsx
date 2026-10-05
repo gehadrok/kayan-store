@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useUserAuth } from '../../context/UserAuthContext.tsx';
 import type { AIProject, AIJob, AIAsset } from '../../types.ts';
+import { KAYAN_AI_LOGO } from '../../utils/assets.ts';
 import {
   Sparkles,
   FolderPlus,
@@ -40,6 +42,7 @@ interface AIWorkspacePageProps {
 
 export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) => {
   const { user } = useUserAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!user) {
@@ -199,14 +202,14 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
             <button
               onClick={() => handleNav('/products')}
               className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-              title="العودة إلى المتجر"
+              title={t('ai.backToStore')}
             >
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-lg shadow-sky-600/30">
-                <Sparkles className="h-5 w-5" />
+              <div className="h-10 w-10 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 p-0.5 shadow-lg shadow-sky-600/20">
+                <img src={KAYAN_AI_LOGO} alt="Kayan AI" className="h-full w-full object-cover rounded-lg" />
               </div>
               <div>
                 <h1 className="text-sm font-black text-white flex items-center gap-2">
@@ -225,7 +228,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 onClick={() => handleNav('/login')}
                 className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-colors cursor-pointer"
               >
-                تسجيل الدخول لاستخدام Kayan AI
+                {t('ai.loginToUse')}
               </button>
             ) : (
               <div className="flex items-center gap-3">
@@ -234,12 +237,12 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                   className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-md shadow-sky-600/20"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>مشروع جديد</span>
+                  <span>{t('ai.newProject')}</span>
                 </button>
 
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-bold text-slate-200">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>متصل بالحساب: {user.displayName || user.email}</span>
+                  <span>{t('ai.connectedAccount')}: {user.displayName || user.email}</span>
                 </div>
               </div>
             )}
@@ -253,13 +256,13 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
           <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-300 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 shrink-0 text-amber-400" />
-              <span>أنت تقوم بمعاينة Kayan AI بوضع الزائر. سجل الدخول لحفظ مشاريعك وأصولك ومتابعة السجل سحابياً.</span>
+              <span>{t('ai.visitorModeNotice')}</span>
             </div>
             <button
               onClick={() => handleNav('/login')}
               className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shrink-0 transition-colors cursor-pointer"
             >
-              تسجيل الدخول الآن
+              {t('ai.loginNow')}
             </button>
           </div>
         )}
@@ -281,18 +284,18 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
               <div className="flex items-center justify-between text-xs font-bold text-white border-b border-slate-800 pb-3">
                 <span className="flex items-center gap-2">
                   <Folder className="w-4 h-4 text-sky-400" />
-                  <span>مشاريعي ({projects.length})</span>
+                  <span>{t('ai.myProjects')} ({projects.length})</span>
                 </span>
               </div>
 
               {projects.length === 0 ? (
                 <div className="py-6 text-center text-slate-500 text-xs space-y-2">
-                  <p>لا توجد مشاريع مسبقة</p>
+                  <p>{t('ai.noProjects')}</p>
                   <button
                     onClick={() => setIsProjectModalOpen(true)}
                     className="text-sky-400 font-bold hover:underline"
                   >
-                    أنشئ أول مشروع لك
+                    {t('ai.createFirst')}
                   </button>
                 </div>
               ) : (
@@ -332,7 +335,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span>ملخص المشروع (Overview)</span>
+                <span>{t('ai.overview')}</span>
               </button>
 
               <button
@@ -342,7 +345,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 }`}
               >
                 <Wand2 className="w-4 h-4 text-sky-400" />
-                <span>المحرر والتوليد (Composer)</span>
+                <span>{t('ai.composerTab')}</span>
               </button>
 
               <button
@@ -352,7 +355,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 }`}
               >
                 <Eye className="w-4 h-4 text-purple-400" />
-                <span>الذكاء البصري (Visual AI)</span>
+                <span>{t('ai.visualTab')}</span>
               </button>
 
               <button
@@ -360,7 +363,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 className="w-full text-start px-4 py-2.5 rounded-2xl flex items-center gap-2.5 transition-colors cursor-pointer bg-gradient-to-r from-indigo-600/30 to-violet-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white hover:from-indigo-600 hover:to-violet-600 font-bold shadow-md shadow-indigo-500/20"
               >
                 <Layers className="w-4 h-4 text-indigo-400" />
-                <span>منشئ التطبيقات (App Builder)</span>
+                <span>{t('ai.appBuilderTab')}</span>
               </button>
 
               <button
@@ -370,7 +373,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 }`}
               >
                 <History className="w-4 h-4" />
-                <span>سجل العمليات (History)</span>
+                <span>{t('ai.historyTab')}</span>
               </button>
 
               <button
@@ -380,7 +383,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 }`}
               >
                 <ImageIcon className="w-4 h-4" />
-                <span>الوسائط والأصول (Assets)</span>
+                <span>{t('ai.assetsTab')}</span>
               </button>
 
               <button
@@ -390,7 +393,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                <span>مكتبة التوجيهات (Prompts)</span>
+                <span>{t('ai.promptsTab')}</span>
               </button>
 
               <button
@@ -398,7 +401,7 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 className="w-full text-start px-4 py-2.5 rounded-2xl flex items-center gap-2.5 transition-colors cursor-pointer bg-gradient-to-r from-sky-950/60 to-indigo-950/40 text-sky-400 hover:text-sky-300 border border-sky-500/20 font-bold"
               >
                 <FileText className="w-4 h-4 text-sky-400" />
-                <span>ذكاء المستندات (Documents)</span>
+                <span>{t('ai.documentsTab')}</span>
               </button>
             </div>
           </div>
@@ -423,13 +426,13 @@ export const AIWorkspacePage: React.FC<AIWorkspacePageProps> = ({ onNavigate }) 
                 <div className="flex items-center gap-3 text-xs font-mono text-slate-400">
                   <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    <span>مزامنة سحابية آمنة</span>
+                    <span>{t('ai.syncNotice')}</span>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center text-slate-400 text-xs">
-                يرجى اختيار مشروع أو إنشاء مشروع جديد لبدء العمل في استوديو Kayan AI.
+                {t('ai.selectProjectNotice')}
               </div>
             )}
 

@@ -3,6 +3,7 @@ import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { useUserAuth } from '../../context/UserAuthContext.tsx';
 import { Download, Globe, Shield, Menu, X, Layers, ArrowLeft, ArrowRight, User, Sparkles } from 'lucide-react';
+import { KAYAN_PLATFORM_LOGO } from '../../utils/assets.ts';
 
 interface NavbarProps {
   currentPath: string;
@@ -22,32 +23,34 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   };
 
   const navLinks = [
-    { path: '/', label: lang === 'ar' ? 'الرئيسية' : 'Home' },
-    { path: '/apps', label: lang === 'ar' ? 'التطبيقات' : 'Apps' },
-    { path: '/products', label: lang === 'ar' ? 'المنتجات الرقمية' : 'Digital Products' },
-    { path: '/ai', label: 'Kayan AI' },
-    { path: '/about', label: lang === 'ar' ? 'عن كيان' : 'About Kayan' }
+    { path: '/', label: t('nav.home') },
+    { path: '/apps', label: t('nav.apps') },
+    { path: '/products', label: t('nav.products') },
+    { path: '/news', label: t('nav.news') },
+    { path: '/cv', label: t('nav.cv') },
+    { path: '/ai', label: t('nav.ai') },
+    { path: '/about', label: t('nav.about') }
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-colors">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-
+        
         {/* Zone 1: Single text element Brand Wordmark */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => handleNav('/')}
             className="group flex items-center gap-2.5 text-start focus:outline-none"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm transition-transform group-hover:scale-105">
-              <Layers className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden shadow-sm transition-transform group-hover:scale-105 border border-slate-200 bg-white">
+              <img src={KAYAN_PLATFORM_LOGO} alt="منصة كيان" className="h-full w-full object-cover" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-slate-900 group-hover:text-sky-600 transition-colors">
-                {lang === 'ar' ? 'كيان' : 'Kayan'}
+                {t('brand.name')}
               </span>
               <span className="text-[11px] text-slate-500 hidden sm:inline">
-                {lang === 'ar' ? 'المنصة الرقمية من كيان سوفت' : 'Kayan Soft Digital Platform'}
+                {t('brand.subtitle')}
               </span>
             </div>
           </button>
@@ -105,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               className="flex items-center gap-1.5 rounded-lg border border-slate-200 text-slate-700 px-3 py-1.5 text-xs font-semibold hover:bg-slate-100 transition-all"
             >
               <User className="h-3.5 w-3.5 text-slate-500" />
-              <span>{lang === 'ar' ? 'حسابي' : 'Account'}</span>
+              <span>{t('nav.adminPortal')}</span>
             </button>
           )}
 
@@ -119,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             }`}
           >
             <Shield className="h-3.5 w-3.5 text-sky-500" />
-            <span>{admin ? (lang === 'ar' ? 'التحكم' : 'Admin') : (lang === 'ar' ? 'المسؤول' : 'Admin')}</span>
+            <span>{admin ? t('nav.admin') : t('nav.adminPortal')}</span>
           </button>
 
           {/* Mobile menu toggle */}
@@ -163,7 +166,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               >
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-sky-600" />
-                  <span>{user ? user.name : 'تسجيل الدخول / حسابي'}</span>
+                  <span>{user ? user.name : t('nav.adminPortal')}</span>
                 </div>
               </button>
             </div>

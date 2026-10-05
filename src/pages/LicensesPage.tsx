@@ -34,7 +34,7 @@ export const LicensesPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-10 text-start">
-
+      
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-sky-700 mb-1">

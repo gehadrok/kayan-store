@@ -50,7 +50,7 @@ async function runPhase8Tests() {
   // 3. Secret Detection Test
   await testCase('Secret Scanning: Forbidden secrets and .env files rejected', async () => {
     const secretFiles = [
-      { path: 'src/config.ts', content: 'const apiKey = "TEST_API_KEY_PLACEHOLDER_VALUE";' },
+      { path: 'src/config.ts', content: 'const apiKey = "AIzaSyTestGeminiApiKey_Secret";' },
       { path: '.env', content: 'DATABASE_URL=postgres://user:pass@localhost:5432/db' }
     ];
     const safety = ExportPipeline.validateArtifactsSafety(secretFiles);

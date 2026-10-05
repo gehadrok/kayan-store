@@ -3,14 +3,17 @@ import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 import { Application, Release, DashboardStats, ActivityLog, Product, ProductFile, Media } from '../../types.ts';
 import { AIAdminSection } from '../../components/admin/AIAdminSection.tsx';
-import {
-  Shield, Key, Lock, LogOut, Plus, Edit3, Trash2,
-  Upload, FileText, Smartphone, Hash, CheckCircle2,
-  AlertTriangle, RefreshCw, Eye, EyeOff, Layers,
+import { AnnouncementsAdminSection } from '../../components/admin/AnnouncementsAdminSection.tsx';
+import { NewsAdminSection } from '../../components/admin/NewsAdminSection.tsx';
+import { NewsAndTickerCenter } from '../../components/admin/NewsAndTickerCenter.tsx';
+import { 
+  Shield, Key, Lock, LogOut, Plus, Edit3, Trash2, 
+  Upload, FileText, Smartphone, Hash, CheckCircle2, 
+  AlertTriangle, RefreshCw, Eye, EyeOff, Layers, 
   HardDrive, Calendar, ArrowRight, ArrowLeft, Clock,
   X, Check, AlertCircle, ShoppingBag, BookOpen, Laptop,
   FileCode, Video, Music, Palette, Image, Play, Download,
-  Brain
+  Brain, Megaphone, Newspaper
 } from 'lucide-react';
 import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../../utils/assets.ts';
 
@@ -29,7 +32,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
   // Dashboard state
-  const [activeTab, setActiveTab] = useState<'overview' | 'apps' | 'products' | 'releases' | 'activity' | 'security' | 'ai'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'apps' | 'products' | 'releases' | 'activity' | 'security' | 'ai' | 'announcements' | 'news'>('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [apps, setApps] = useState<Application[]>([]);
   const [products, setProducts] = useState<Product[]>([]); // Need to define Product type in imports
@@ -883,7 +886,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-start">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl">
-
+          
           <div className="flex flex-col items-center text-center space-y-3 mb-6 pb-4 border-b border-slate-100">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-sm">
               <Shield className="h-6 w-6" />
@@ -958,7 +961,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   // Logged-in Admin Dashboard View
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 space-y-8 text-start">
-
+      
       {/* Top Admin Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-4">
@@ -1065,6 +1068,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
           }`}
         >
           {lang === 'ar' ? 'الذكاء الاصطناعي' : 'AI Intelligence'}
+        </button>
+        <button
+          onClick={() => setActiveTab('news')}
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 ${
+            activeTab === 'news' || activeTab === 'announcements' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Newspaper className="w-3.5 h-3.5 text-sky-500" />
+          {lang === 'ar' ? 'إدارة الأخبار وشريط الأخبار' : 'News & News Ticker'}
         </button>
       </div>
 
@@ -1473,6 +1485,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       {/* Tab 6: AI Control Center */}
       {activeTab === 'ai' && (
         <AIAdminSection token={token} />
+      )}
+
+      {/* Tab: News & News Ticker Management Center */}
+      {(activeTab === 'news' || activeTab === 'announcements') && (
+        <NewsAndTickerCenter
+          token={token}
+          initialTab={activeTab === 'announcements' ? 'ticker' : 'news'}
+        />
       )}
 
       {/* CREATE / EDIT APPLICATION MODAL */}

@@ -1,11 +1,11 @@
 # Kayan | كيان — Complete Source Export Manifest (V6)
 
-**Export Package:** `Kayan-Platform-FINAL-SOURCE-V6.zip`
-**Generated Date:** September 30, 2026
-**Auditor / Packager:** Kayan Core Engineering
-**Integrity Status:** VERIFIED & PRODUCTION READY
-**Package Size:** 8.15 MB (Compressed) / 9.31 MB (Uncompressed)
-**Total Entries:** 138 files
+**Export Package:** `Kayan-Platform-FINAL-SOURCE-V6.zip`  
+**Generated Date:** September 30, 2026  
+**Auditor / Packager:** Kayan Core Engineering  
+**Integrity Status:** VERIFIED & PRODUCTION READY  
+**Package Size:** 8.15 MB (Compressed) / 9.31 MB (Uncompressed)  
+**Total Entries:** 138 files  
 
 ---
 

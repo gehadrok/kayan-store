@@ -3,7 +3,7 @@
 ## Status: PASS
 
 ## 1. Database Migrations
-- **Deterministic Migrations**: Audited `src/server/db.ts` `initPgTables`.
+- **Deterministic Migrations**: Audited `src/server/db.ts` `initPgTables`. 
 - **Integrity Check**: Critical tables exist and are queryable.
 - **Results**:
   - `ai_providers`: EXISTS

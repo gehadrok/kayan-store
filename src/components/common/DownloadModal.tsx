@@ -56,7 +56,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
+      <div 
         className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 text-start"
         role="dialog"
         aria-modal="true"
@@ -179,7 +179,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
           >
             {t('modal.cancel')}
           </button>
-
+          
           <button
             onClick={handleStartDownload}
             disabled={downloading}

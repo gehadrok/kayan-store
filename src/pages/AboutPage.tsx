@@ -11,7 +11,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-12 text-start">
-
+      
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-sky-700 mb-1">
@@ -29,7 +29,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
       {/* Profile & Developer Card */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-
+          
           <div className="md:col-span-4 flex flex-col items-center sm:items-start text-center sm:text-start space-y-3">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-md">
               <User className="h-10 w-10" />

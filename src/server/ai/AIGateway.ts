@@ -73,60 +73,75 @@ export class AIGateway {
      * Default is 3 (1 initial + 2 retries).
      */
     const maxAttempts = settings.maxRetryAttempts || 3;
-    const candidates = routeResult.candidates.slice(0, maxAttempts);
+    const candidates = routeResult.candidates.slice(0, maxAttempts); 
     let lastError: any = null;
     let attempt = 0;
+    let candidateIndex = 0;
 
-    for (const candidate of candidates) {
+    while (attempt < maxAttempts) {
+      const candidate = candidates[Math.min(candidateIndex, candidates.length - 1)];
+      if (!candidate) break;
+      
       attempt++;
       const provider = this.getProvider(candidate.providerId);
-      if (!provider) continue;
+      if (!provider) {
+        if (candidateIndex < candidates.length - 1) {
+          candidateIndex++;
+          attempt--; // Don't count this as an attempt if provider not found
+          continue;
+        }
+        break;
+      }
 
       try {
         const result = await executor(provider, candidate.modelId, candidate.apiKey);
-
+        
         // Add metadata to result
         if (result && typeof result === 'object') {
           (result as any).providerId = candidate.providerId;
           (result as any).model = candidate.modelId;
           (result as any).retryCount = attempt - 1;
-          (result as any).fallbackUsed = attempt > 1;
+          (result as any).fallbackUsed = attempt > 1 || candidateIndex > 0;
         }
-
+        
         return result;
       } catch (err: any) {
         lastError = err;
         const msg = (err?.message || '').toLowerCase();
         const statusCode = err?.status || err?.statusCode;
-
+        
         // RETRYABLE ERRORS:
         // - 429 (Rate Limit / Quota)
         // - 503 (Service Unavailable)
         // - 504 / 408 (Timeout)
         // - Transient failures (overloaded, busy)
-        const isRetryable =
+        const isRetryable = 
           statusCode === 429 ||
           statusCode === 503 ||
           statusCode === 504 ||
           statusCode === 408 ||
-          msg.includes('quota') ||
-          msg.includes('rate limit') ||
+          msg.includes('quota') || 
+          msg.includes('rate limit') || 
           msg.includes('unavailable') ||
           msg.includes('timeout') ||
           msg.includes('overloaded') ||
           msg.includes('busy') ||
           msg.includes('transient');
 
-        // NON-RETRYABLE ERRORS (Fail immediately):
-        // - 400 (Bad Request / Invalid Request)
-        // - 401 / 403 (Unauthorized / Forbidden / Invalid Key)
-        // - 404 (Model Not Found)
-        // - Capability mismatches
         if (!isRetryable || attempt >= maxAttempts) {
           throw err;
         }
-
-        console.warn(`[AIGateway] Attempt ${attempt}/${maxAttempts} with ${candidate.providerId}/${candidate.modelId} failed (Retryable). Trying fallback... Error: ${err.message}`);
+        
+        // Log as informational, not a warning, to avoid triggering AIS error monitors during successful fallbacks
+        console.log(`[AIGateway] Attempt ${attempt}/${maxAttempts} with ${candidate.providerId}/${candidate.modelId} failed (Retryable). Error: ${err.message}`);
+        
+        // Move to next candidate if available, otherwise stay on current one for retry
+        if (candidateIndex < candidates.length - 1) {
+          candidateIndex++;
+        }
+        
+        // Backoff delay
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
       }
     }
 
@@ -134,93 +149,93 @@ export class AIGateway {
   }
 
   public async generateText(params: AIGenerateTextParams, routerInput: Partial<RouterInput> = {}): Promise<AIGenerateTextResult> {
-    return this.executeWithFallback('TEXT', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('TEXT', params, routerInput, (p, model, key) => 
       p.generateText({ ...params, model }, key)
     );
   }
 
   public async generateImage(params: AIGenerateImageParams, routerInput: Partial<RouterInput> = {}): Promise<AIGenerateImageResult> {
-    return this.executeWithFallback('IMAGE_GENERATION', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('IMAGE_GENERATION', params, routerInput, (p, model, key) => 
       p.generateImage({ ...params, model }, key)
     );
   }
 
   public async generateVideo(params: AIGenerateVideoParams, routerInput: Partial<RouterInput> = {}): Promise<AIGenerateVideoResult> {
     // Note: Video is usually a specific capability, but we'll use a placeholder if not explicitly defined in registry
-    return this.executeWithFallback('VIDEO_GENERATION', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('VIDEO_GENERATION', params, routerInput, (p, model, key) => 
       p.generateVideo({ ...params, model }, key)
     );
   }
 
   public async generateCode(params: AIGenerateCodeParams, routerInput: Partial<RouterInput> = {}): Promise<AIGenerateCodeResult> {
-    return this.executeWithFallback('CODE', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('CODE', params, routerInput, (p, model, key) => 
       p.generateCode({ ...params, model }, key)
     );
   }
 
   public async analyzeFile(params: AIAnalyzeFileParams, routerInput: Partial<RouterInput> = {}): Promise<AIAnalyzeFileResult> {
-    return this.executeWithFallback('DOCUMENT_ANALYSIS', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('DOCUMENT_ANALYSIS', params, routerInput, (p, model, key) => 
       p.analyzeFile({ ...params, model }, key)
     );
   }
 
   public async understandImage(params: AIUnderstandImageParams, routerInput: Partial<RouterInput> = {}): Promise<AIUnderstandImageResult> {
-    return this.executeWithFallback('VISION', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('VISION', params, routerInput, (p, model, key) => 
       p.understandImage({ ...params, model }, key)
     );
   }
 
   public async analyzeVision(params: AIVisionAnalyzeParams, routerInput: Partial<RouterInput> = {}): Promise<AIVisionAnalyzeResult> {
-    return this.executeWithFallback('VISION', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('VISION', params, routerInput, (p, model, key) => 
       p.analyzeVision({ ...params, model }, key)
     );
   }
 
   public async imageToPrompt(params: AIImageToPromptParams, routerInput: Partial<RouterInput> = {}): Promise<AIImageToPromptResult> {
-    return this.executeWithFallback('IMAGE_TO_PROMPT', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('IMAGE_TO_PROMPT', params, routerInput, (p, model, key) => 
       p.imageToPrompt({ ...params, model }, key)
     );
   }
 
   public async analyzeUI(params: AIUIAnalyzeParams, routerInput: Partial<RouterInput> = {}): Promise<AIUIAnalyzeResult> {
-    return this.executeWithFallback('UI_ANALYSIS', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('UI_ANALYSIS', params, routerInput, (p, model, key) => 
       p.analyzeUI({ ...params, model }, key)
     );
   }
 
   public async screenshotToCode(params: AIScreenshotToCodeParams, routerInput: Partial<RouterInput> = {}): Promise<AIScreenshotToCodeResult> {
-    return this.executeWithFallback('SCREENSHOT_TO_CODE', params, routerInput, (p, model, key) =>
+    return this.executeWithFallback('SCREENSHOT_TO_CODE', params, routerInput, (p, model, key) => 
       p.screenshotToCode({ ...params, model }, key)
     );
   }
 
   public async generateSpecification(prompt: string, routerInput: Partial<RouterInput> = {}): Promise<ApplicationSpecification> {
-    return this.executeWithFallback('APP_REQUIREMENTS', { prompt }, routerInput, (p, model, key) =>
+    return this.executeWithFallback('APP_REQUIREMENTS', { prompt }, routerInput, (p, model, key) => 
       p.generateSpecification(prompt, key)
     );
   }
 
   public async generateArchitecture(spec: ApplicationSpecification, routerInput: Partial<RouterInput> = {}): Promise<ArchitecturePlan> {
-    return this.executeWithFallback('APP_ARCHITECTURE', { spec }, routerInput, (p, model, key) =>
+    return this.executeWithFallback('APP_ARCHITECTURE', { spec }, routerInput, (p, model, key) => 
       p.generateArchitecture(spec, key)
     );
   }
 
   public async generatePIR(spec: ApplicationSpecification, arch: ArchitecturePlan, routerInput: Partial<RouterInput> = {}): Promise<PIRProject> {
-    return this.executeWithFallback('APP_PIR', { spec, arch }, routerInput, (p, model, key) =>
+    return this.executeWithFallback('APP_PIR', { spec, arch }, routerInput, (p, model, key) => 
       p.generatePIR(spec, arch, key)
     );
   }
 
   public async validatePIR(pir: PIRProject, routerInput: Partial<RouterInput> = {}): Promise<PIRValidationResult> {
     // Validation is usually local or fast, but we'll use APP_PIR as capability
-    return this.executeWithFallback('APP_PIR', { pir }, routerInput, (p, model, key) =>
+    return this.executeWithFallback('APP_PIR', { pir }, routerInput, (p, model, key) => 
       p.validatePIR(pir, key)
     );
   }
 
   public async generateArtifacts(pir: PIRProject, routerInput: Partial<RouterInput> = {}): Promise<AppBuilderArtifacts> {
-    return this.executeWithFallback('APP_FRONTEND', { pir }, routerInput, (p, model, key) =>
+    return this.executeWithFallback('APP_FRONTEND', { pir }, routerInput, (p, model, key) => 
       p.generateArtifacts(pir, key)
     );
   }

@@ -60,12 +60,12 @@ jobs:
             ./gradlew assembleDebug
             ARTIFACT_PATH="app/build/outputs/apk/debug/app-debug.apk"
           fi
-
+          
           if [ ! -f "$ARTIFACT_PATH" ]; then
              echo "Build failed: Artifact not found at $ARTIFACT_PATH"
              exit 1
           fi
-
+          
           # Calculate SHA-256
           sha256sum "$ARTIFACT_PATH" > ../artifact_checksum.txt
           echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_ENV

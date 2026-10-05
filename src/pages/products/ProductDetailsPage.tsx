@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
 import { useUserAuth } from '../../context/UserAuthContext.tsx';
 import type { Product, ProductFile, Media } from '../../types.ts';
-import {
-  ArrowLeft, ArrowRight, Download, Share2, Check, ShieldCheck,
-  ExternalLink, Play, BookOpen, Smartphone, Laptop, FileText,
+import { 
+  ArrowLeft, ArrowRight, Download, Share2, Check, ShieldCheck, 
+  ExternalLink, Play, BookOpen, Smartphone, Laptop, FileText, 
   Layers, Tag, Calendar, User, Globe, AlertCircle, Copy, CheckCircle2,
   FileCode, Video, Music, Palette, ShoppingBag, Eye, Heart, Star, MessageSquare
 } from 'lucide-react';
@@ -269,7 +269,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ slug, on
   return (
     <div className="min-h-screen bg-slate-50 py-8" dir={dir}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-
+        
         {/* Navigation Breadcrumb / Back button */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -306,7 +306,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ slug, on
         {/* Top Hero Section */}
         <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm mb-8">
           <div className="flex flex-col md:flex-row gap-6 sm:gap-8 items-start">
-
+            
             {/* Product Icon / Main Visual */}
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0 flex items-center justify-center shadow-xs">
               {productData.iconUrl || productData.coverUrl ? (
@@ -415,10 +415,10 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ slug, on
 
         {/* Main Content Grid: Description & Media vs Specs & Files */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-
+          
           {/* Left Column (2 Cols): Full Description, Features, and Media Gallery */}
           <div className="lg:col-span-2 space-y-8">
-
+            
             {/* Full Description & Features */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100">
@@ -639,13 +639,13 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ slug, on
 
           {/* Right Column: Metadata Box & Specifications */}
           <div className="space-y-6">
-
+            
             {/* Technical Specifications */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
               <h3 className="font-bold text-slate-900 text-base mb-4 pb-2 border-b border-slate-100">
                 {lang === 'ar' ? 'معلومات ومواصفات المنتج' : 'Product Information'}
               </h3>
-
+              
               <div className="space-y-3.5 text-xs">
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-500">{lang === 'ar' ? 'نوع المنتج' : 'Type'}</span>
@@ -782,7 +782,7 @@ export const ProductDetailsPage: React.FC<ProductDetailsPageProps> = ({ slug, on
 
       {/* Media Preview Modal */}
       {selectedMediaPreview && (
-        <div
+        <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4"
           onClick={() => setSelectedMediaPreview(null)}
         >

@@ -2,10 +2,10 @@ import React from 'react';
 import { useLanguage } from '../context/LanguageContext.tsx';
 import { Application } from '../types.ts';
 import { AppCard } from '../components/common/AppCard.tsx';
-import {
-  Download, Shield, Cpu, Lock, CheckCircle2,
-  ArrowRight, ArrowLeft, Smartphone, FileText,
-  Layers, ExternalLink, HardDrive, Check
+import { 
+  Download, Shield, Cpu, Lock, CheckCircle2, 
+  ArrowRight, ArrowLeft, Smartphone, FileText, 
+  Layers, ExternalLink, HardDrive, Check, Sparkles 
 } from 'lucide-react';
 import { getSafeAssetUrl, KAYAN_PDF_ICON, KAYAN_PDF_BANNER } from '../utils/assets.ts';
 
@@ -30,15 +30,54 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
 
   return (
     <div className="space-y-20 pb-16">
+      
+      {/* Ecosystem Hub */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div onClick={() => onNavigate('/ai')} className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-sky-300 transition-all text-start">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-600 mb-4 group-hover:scale-105 transition-transform">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
+              {lang === 'ar' ? 'Kayan AI' : 'Kayan AI'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-2">
+              {lang === 'ar' ? 'أدوات الذكاء الاصطناعي' : 'Advanced AI Tools'}
+            </p>
+          </div>
+          <div onClick={() => onNavigate('/news')} className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-sky-300 transition-all text-start">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-600 mb-4 group-hover:scale-105 transition-transform">
+              <Layers className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
+              {lang === 'ar' ? 'Kayan News' : 'Kayan News'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-2">
+              {lang === 'ar' ? 'الأخبار والتقارير' : 'News & Reports'}
+            </p>
+          </div>
+          <div onClick={() => onNavigate('/cv')} className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-sky-300 transition-all text-start">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 text-sky-600 mb-4 group-hover:scale-105 transition-transform">
+              <FileText className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
+              {lang === 'ar' ? 'Kayan CV' : 'Kayan CV'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-2">
+              {lang === 'ar' ? 'إنشاء السير الذاتية' : 'AI Resume Builder'}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-16 md:pt-18 md:pb-24 border-b border-slate-200/60 kayan-gradient-hero">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
-
+            
             {/* Left/Start Column: Text & CTAs (7 cols) */}
             <div className="lg:col-span-7 space-y-6 text-start">
-
+              
               {/* Official Badge - Quiet text kicker */}
               <div className="flex items-center gap-2 text-xs font-semibold text-sky-700">
                 <span className="flex h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
@@ -192,7 +231,7 @@ export const HomePage: React.FC<HomePageProps> = ({ apps, onNavigate, onDownload
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/50 p-6 sm:p-10 shadow-sm text-start">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-center">
-
+              
               <div className="lg:col-span-4 flex flex-col items-center sm:items-start text-center sm:text-start space-y-4">
                 <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white p-3.5 shadow-md border border-slate-100">
                   <img

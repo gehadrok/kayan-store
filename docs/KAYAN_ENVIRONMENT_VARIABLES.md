@@ -1,8 +1,8 @@
 # Kayan | كيان — Read-Only Code Audit: Environment Variables
 
-**Audit Date:** September 30, 2026
-**Status:** COMPLETE (Read-Only)
-**Scope:** Full codebase search (`process.env`, `import.meta.env`, `dotenv`, AI, DB, Storage, Auth, Build)
+**Audit Date:** September 30, 2026  
+**Status:** COMPLETE (Read-Only)  
+**Scope:** Full codebase search (`process.env`, `import.meta.env`, `dotenv`, AI, DB, Storage, Auth, Build)  
 
 ---
 

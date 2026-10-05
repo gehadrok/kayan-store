@@ -22,7 +22,7 @@ export function registerAppBuilderRoutes(app: Express, requireUser: any, aiRateL
 
       // Create AI project with specification
       const project = await db.createAIProject(userId, projectName, prompt, 'APP_BUILDER');
-
+      
       // Update project with specification
       const updated = await db.updateAIProject(project.id, userId, {
         specification: spec,

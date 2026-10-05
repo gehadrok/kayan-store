@@ -1,9 +1,9 @@
 # Final Source Synchronization Report — Kayan | كيان
 
-**Status: BLOCKED (Source / GitHub Divergence)**
-**Date:** September 30, 2026
-**Platform Identity:** Kayan | كيان (المنصة الرقمية من كيان سوفت)
-**Target Repository:** `gehadrok/kayan-store` (Branch: `main`)
+**Status: BLOCKED (Source / GitHub Divergence)**  
+**Date:** September 30, 2026  
+**Platform Identity:** Kayan | كيان (المنصة الرقمية من كيان سوفت)  
+**Target Repository:** `gehadrok/kayan-store` (Branch: `main`)  
 
 ---
 

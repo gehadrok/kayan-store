@@ -422,3 +422,106 @@ export interface AIUsageStats {
   quotaErrorCount: number;
   avgDurationMs: number;
 }
+
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'discount' | 'new_product' | 'update' | 'promo' | string;
+  icon?: string;
+  link?: string;
+  productId?: string;
+  startAt: string;
+  endAt: string;
+  priority: number;
+  displayOrder: number;
+  active: boolean;
+  dismissible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewsSource {
+  id: string;
+  name: string;
+  url: string;
+  providerType: 'gnews' | 'newsapi' | 'rss' | string;
+  enabled: boolean;
+  country: string;
+  errorCount: number;
+  lastSuccessAt?: string;
+  lastError?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewsLocation {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  countryCode: string; // e.g., 'YE', 'SA', 'US', 'GLOBAL'
+  parentId?: string; // for city/district belonging to governorate/country
+  type: 'country' | 'governorate' | 'city' | 'district';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewsLocationAlias {
+  id: string;
+  locationId: string;
+  alias: string;
+  language: string; // 'ar' | 'en'
+  createdAt: string;
+}
+
+export interface NewsArticle {
+  id: string;
+  sourceId?: string;
+  sourceName?: string;
+  title: string;
+  originalTitle: string;
+  description?: string;
+  content?: string;
+  url: string;
+  canonicalUrl: string;
+  contentHash: string;
+  imageUrl?: string;
+  language: string;
+  country: string;
+  regionId?: string;
+  regionName?: string;
+  category: string;
+  publishedAt: string;
+  aiTitle?: string;
+  aiSummary?: string;
+  aiKeyPoints?: string[];
+  aiLocationVerified?: boolean;
+  aiProcessed: boolean;
+  aiError?: string;
+  fetchedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NewsFetchJob {
+  id: string;
+  startedAt: string;
+  finishedAt?: string;
+  status: 'running' | 'success' | 'failed' | 'partial';
+  sourcesChecked: number;
+  articlesFound: number;
+  articlesNew: number;
+  articlesDuplicate: number;
+  articlesAiProcessed: number;
+  articlesFailed: number;
+  errorMessage?: string;
+}
+
+export interface NewsSettings {
+  id: string;
+  updateIntervalMinutes: number;
+  enabled: boolean;
+  lastRunAt?: string;
+  updatedAt: string;
+}
+

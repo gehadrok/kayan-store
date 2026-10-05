@@ -7,7 +7,7 @@ export const PrivacyPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-10 text-start">
-
+      
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 mb-1">
@@ -63,7 +63,7 @@ export const PrivacyPage: React.FC = () => {
 
       {/* Main Privacy Body */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6 text-sm leading-relaxed text-slate-700 shadow-sm">
-
+        
         <section className="space-y-2">
           <h2 className="text-base font-bold text-slate-900">
             {lang === 'ar' ? '1. التزامنا تجاه الخصوصية' : '1. Our Privacy Commitment'}
@@ -77,12 +77,12 @@ export const PrivacyPage: React.FC = () => {
 
         <section className="space-y-2">
           <h2 className="text-base font-bold text-slate-900">
-            {lang === 'ar' ? '2. البيانات والمستندات في تطبيق كيان PDF' : '2. Data & Documents in Kayan PDF'}
+            {lang === 'ar' ? '2. البيانات والمستندات والمنتجات الرقمية' : '2. Data, Documents & Digital Products'}
           </h2>
           <p>
             {lang === 'ar'
-              ? 'عند استخدام تطبيق كيان PDF لتحويل الصور أو مسح المستندات بالكاميرا أو ضغط ودمج الملفات، تجري كل هذه العمليات باستخدام مكتبات المعالجة المحلية على نواة الهاتف. لا يتم إرسال أي صورة أو صفحة أو نص إلى خوادم خارجية أو أطراف ثالثة على الإطلاق.'
-              : 'When using Kayan PDF to convert pictures, scan documents with your camera, compress, or merge files, all operations execute entirely locally. No pictures, pages, or text are ever transmitted to external servers or third parties.'}
+              ? 'بالنسبة لتطبيقات الإنتاجية (مثل كيان PDF)، تجري كافة العمليات محلياً على جهازك. أما بالنسبة لخدمات Kayan AI و Kayan News، فقد يتم إرسال استعلامات نصية أو روابط أخبار إلى نماذج ذكاء اصطناعي (مثل Google Gemini) بغرض التحليل والتلخيص فقط. المنتجات الرقمية المشتراة من المتجر يتم تخزين سجلات امتلاكها بشكل آمن ومحمي.'
+              : 'For productivity tools like Kayan PDF, all processing is local. For Kayan AI and Kayan News, text queries or news links may be processed via AI models (such as Google Gemini) for analysis and summarization. Digital product ownership records are stored securely.'}
           </p>
         </section>
 

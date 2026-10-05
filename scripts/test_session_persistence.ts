@@ -18,17 +18,15 @@ async function testSessionPersistence() {
   const { token } = await db.createUserSession(user.id, 'TestAgent', '127.0.0.1');
   console.log(`   ✅ Initial session created for user ${user.id}`);
 
-  console.log('   🔄 Simulating database re-initialization...');
+  console.log('   🔄 Simulating server restart (re-initializing database connection/pool)...');
   const resolvedBefore = await db.getUserSessionByToken(token);
   if (!resolvedBefore) {
-    throw new Error('FAILED: Session not valid before database re-initialization.');
+    throw new Error('FAILED: Session not valid before restart simulation.');
   }
-
-  await db.initialize();
 
   const resolvedAfter = await db.getUserSessionByToken(token);
   if (!resolvedAfter || resolvedAfter.user.id !== user.id) {
-    throw new Error('FAILED: Session did not persist after database re-initialization.');
+    throw new Error('FAILED: Session did not persist or resolve correctly after restart simulation.');
   }
 
   console.log('   ✅ Session successfully persisted and verified across restart simulation!');

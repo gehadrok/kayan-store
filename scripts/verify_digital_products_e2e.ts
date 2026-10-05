@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 async function runE2E() {
   console.log('=== STARTING KAYAN DIGITAL PRODUCTS E2E VERIFICATION ===');
-
+  
   await db.initialize();
 
   // 1. Test Admin Authorization rules

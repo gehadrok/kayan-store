@@ -36,7 +36,7 @@ async function runVerification() {
         if (p) p.status = 'DISABLED';
         (db as any).saveJson(data);
       }
-
+      
       try {
         const result = await AIModelRouter.route({ capability: 'TEXT' });
         // Should not select gemini if it's the only one active
@@ -82,7 +82,7 @@ async function runVerification() {
 
     const settings = await db.getAISettings();
     const originalMax = settings.maxRetryAttempts;
-
+    
     if ((db as any).isPg) {
       await (db as any).pool.query("UPDATE ai_settings SET max_retry_attempts = 2");
     } else {
@@ -90,7 +90,7 @@ async function runVerification() {
       data.aiSettings[0].maxRetryAttempts = 2;
       (db as any).saveJson(data);
     }
-
+    
     const result = await AIModelRouter.route({ capability: 'TEXT' });
     if (result.candidates.slice(0, 2).length > 2) throw new Error('Candidates slice failed');
 
@@ -119,7 +119,7 @@ async function runVerification() {
   await test('Usage: Record new fields', async () => {
     const startedAt = new Date().toISOString();
     const completedAt = new Date().toISOString();
-
+    
     await db.recordAIUsage({
       provider: 'test',
       model: 'test-model',

@@ -30,9 +30,9 @@ import type {
 
 function translateError(err: any): Error {
   if (!err) return new Error('حدث خطأ غير معروف في خادم الذكاء الاصطناعي (Unknown AI Error)');
-
+  
   const originalMessage = err?.message || String(err);
-
+  
   // Try to parse as JSON if it contains JSON payload
   let apiError: any = null;
   try {
@@ -77,9 +77,12 @@ function translateError(err: any): Error {
       delayInfo = ` يرجى المحاولة مجدداً بعد ${delayMatch[1]}.`;
     }
 
-    return new Error(
+    const translated = new Error(
       `تم تجاوز حد الاستهلاك المجاني لخدمة الذكاء الاصطناعي مؤقتاً (Rate Limit / Quota Exceeded).${delayInfo} الرجاء الانتظار قليلاً ثم المحاولة مرة أخرى.`
     );
+    (translated as any).status = code || 429;
+    (translated as any).statusCode = code || 429;
+    return translated;
   }
 
   // 2. Authentication / API Key issues (401)
@@ -90,9 +93,11 @@ function translateError(err: any): Error {
     cleanMessage.includes('unauthorized') ||
     cleanMessage.includes('invalid credentials')
   ) {
-    return new Error(
+    const translated = new Error(
       'فشل التحقق من مفتاح الوصول لخدمة الذكاء الاصطناعي (API Key Invalid). الرجاء التأكد من تهيئة بيئة العمل بشكل صحيح.'
     );
+    (translated as any).status = 401;
+    return translated;
   }
 
   // 3. Access Forbidden (403)
@@ -103,9 +108,11 @@ function translateError(err: any): Error {
     cleanMessage.includes('permission denied') ||
     cleanMessage.includes('access denied')
   ) {
-    return new Error(
+    const translated = new Error(
       'الوصول إلى خدمة الذكاء الاصطناعي مرفوض. يرجى مراجعة الصلاحيات أو قيود النطاق الجغرافي للنموذج (AI Access Forbidden).'
     );
+    (translated as any).status = 403;
+    return translated;
   }
 
   // 4. Model Not Found (404)
@@ -116,9 +123,11 @@ function translateError(err: any): Error {
     cleanMessage.includes('no longer available') ||
     cleanMessage.includes('unknown model')
   ) {
-    return new Error(
+    const translated = new Error(
       'نموذج الذكاء الاصطناعي المطلوب غير متوفر حالياً أو غير مدعوم في هذا النطاق (AI Model Not Found).'
     );
+    (translated as any).status = 404;
+    return translated;
   }
 
   // 5. Service unavailable / Overloaded / Gateway issues (503 / 504 / 502)
@@ -131,9 +140,12 @@ function translateError(err: any): Error {
     cleanMessage.includes('unavailable') ||
     cleanMessage.includes('gateway')
   ) {
-    return new Error(
+    const translated = new Error(
       'خادم الذكاء الاصطناعي يواجه ضغطاً كبيراً حالياً أو غير متاح مؤقتاً. يرجى إعادة المحاولة بعد ثوانٍ قليلة.'
     );
+    (translated as any).status = code || 503;
+    (translated as any).statusCode = code || 503;
+    return translated;
   }
 
   // 6. Bad / Invalid Request (400)
@@ -143,29 +155,35 @@ function translateError(err: any): Error {
     cleanMessage.includes('invalid') ||
     cleanMessage.includes('bad request')
   ) {
-    return new Error(
+    const translated = new Error(
       `طلب غير صالح أو معطيات خاطئة مرسلة لخدمة الذكاء الاصطناعي: ${cleanMessage}`
     );
+    (translated as any).status = 400;
+    return translated;
   }
 
   // 7. Internal Server Error (500)
   if (code === 500 || status === 'INTERNAL') {
-    return new Error(
+    const translated = new Error(
       'حدث خطأ داخلي لدى مزود خدمة الذكاء الاصطناعي (AI Internal Server Error). يرجى إعادة المحاولة لاحقاً.'
     );
+    (translated as any).status = 500;
+    return translated;
   }
 
   // General Normalization: never leak raw JSON structures
-  return new Error(cleanMessage);
+  const finalError = new Error(cleanMessage);
+  if (code) (finalError as any).status = code;
+  return finalError;
 }
 
 const FALLBACK_MODELS: Record<string, string[]> = {
-  'gemini-3.8-flash': ['gemini-3.5-flash-lite'],
-  'gemini-3.1-pro-preview': ['gemini-3.8-flash', 'gemini-3.5-flash-lite'],
+  'gemini-3.8-flash': ['gemini-2.0-flash', 'gemini-3.5-flash-lite', 'gemini-1.5-flash'],
+  'gemini-3.1-pro-preview': ['gemini-2.0-flash', 'gemini-3.8-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
   'gemini-3.1-flash-lite-image': ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
 };
 
-function checkIsRateLimit(err: any): boolean {
+function isRetryableError(err: any): boolean {
   if (!err) return false;
   const originalMessage = err?.message || String(err);
   let apiError: any = null;
@@ -182,18 +200,24 @@ function checkIsRateLimit(err: any): boolean {
 
   const code = apiError?.error?.code || apiError?.code;
   const status = apiError?.error?.status || apiError?.status;
-  const message = apiError?.error?.message || apiError?.message || originalMessage;
+  const message = (apiError?.error?.message || apiError?.message || originalMessage).toLowerCase();
 
   return (
     code === 429 ||
+    code === 503 ||
+    code === 504 ||
+    code === 502 ||
     status === 'RESOURCE_EXHAUSTED' ||
+    status === 'UNAVAILABLE' ||
     message.includes('quota') ||
-    message.includes('RESOURCE_EXHAUSTED') ||
-    message.includes('Rate limit') ||
+    message.includes('resource_exhausted') ||
+    message.includes('rate limit') ||
     message.includes('429') ||
-    originalMessage.includes('quota') ||
-    originalMessage.includes('RESOURCE_EXHAUSTED') ||
-    originalMessage.includes('limit')
+    message.includes('overloaded') ||
+    message.includes('unavailable') ||
+    message.includes('busy') ||
+    message.includes('timeout') ||
+    message.includes('transient')
   );
 }
 
@@ -236,7 +260,7 @@ export class GeminiProvider implements IAIProvider {
     if (!clientInstance) {
       throw new Error('AI provider is not configured. Missing GEMINI_API_KEY.');
     }
-
+    
     // Create a dynamic proxy on the Gemini client to automatically catch, fallback, and translate all API errors centrally
     return new Proxy(clientInstance, {
       get(target, prop) {
@@ -254,16 +278,14 @@ export class GeminiProvider implements IAIProvider {
                     return await modelsVal.apply(modelsTarget, args);
                   } catch (err: any) {
                     // Centralized Self-Healing Auto-Fallback retries
-                    const isRateLimit = checkIsRateLimit(err);
-                    if (isRateLimit && reqArg && typeof reqArg === 'object' && currentModel) {
+                    if (isRetryableError(err) && reqArg && typeof reqArg === 'object' && currentModel) {
                       const fallbacks = FALLBACK_MODELS[currentModel] || [];
                       for (const fbModel of fallbacks) {
-                        console.warn(`[GeminiProvider] Quota exceeded for model "${currentModel}". Retrying automatically with fallback "${fbModel}"...`);
                         try {
                           const fallbackArgs = [{ ...reqArg, model: fbModel }, ...args.slice(1)];
                           return await modelsVal.apply(modelsTarget, fallbackArgs);
                         } catch (fallbackErr: any) {
-                          console.error(`[GeminiProvider] Fallback model "${fbModel}" also failed:`, fallbackErr?.message || fallbackErr);
+                          // Silent failure for intermediate fallbacks
                         }
                       }
                     }

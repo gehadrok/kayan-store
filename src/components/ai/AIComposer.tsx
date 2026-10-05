@@ -204,7 +204,7 @@ export const AIComposer: React.FC<AIComposerProps> = ({
         setStatus('failed');
         const errType = data.error || '';
         const rawMessage = data.message || '';
-
+        
         if (res.status === 401) {
           setErrorMsg('جلسة المستخدم منتهية أو غير صالحة. يرجى تسجيل الدخول مجدداً (401).');
           return;

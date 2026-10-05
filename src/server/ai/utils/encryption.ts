@@ -24,12 +24,12 @@ export function encrypt(text: string): { encryptedText: string; iv: string; tag:
   }
   const iv = crypto.randomBytes(12); // 96-bit IV
   const cipher = crypto.createCipheriv('aes-256-gcm', masterKeyBuffer, iv);
-
+  
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-
+  
   const tag = cipher.getAuthTag().toString('hex');
-
+  
   return {
     encryptedText: encrypted,
     iv: iv.toString('hex'),
@@ -47,11 +47,11 @@ export function decrypt(encryptedText: string, ivHex: string, tagHex: string): s
   const iv = Buffer.from(ivHex, 'hex');
   const tag = Buffer.from(tagHex, 'hex');
   const decipher = crypto.createDecipheriv('aes-256-gcm', masterKeyBuffer, iv);
-
+  
   decipher.setAuthTag(tag);
-
+  
   let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-
+  
   return decrypted;
 }

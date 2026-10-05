@@ -7,7 +7,7 @@ export const TermsPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-10 text-start">
-
+      
       {/* Header */}
       <div className="border-b border-slate-200 pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-sky-700 mb-1">
@@ -24,7 +24,7 @@ export const TermsPage: React.FC = () => {
 
       {/* Main Terms Body */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6 text-sm leading-relaxed text-slate-700 shadow-sm">
-
+        
         <section className="space-y-2">
           <h2 className="text-base font-bold text-slate-900">
             {lang === 'ar' ? '1. القبول والاتفاق' : '1. Acceptance of Terms'}
@@ -60,12 +60,12 @@ export const TermsPage: React.FC = () => {
 
         <section className="space-y-2">
           <h2 className="text-base font-bold text-slate-900">
-            {lang === 'ar' ? '4. ترخيص الاستخدام' : '4. License Grant'}
+            {lang === 'ar' ? '4. ترخيص الاستخدام والمنتجات الرقمية' : '4. Usage License & Digital Products'}
           </h2>
           <p>
             {lang === 'ar'
-              ? 'تمنحك كيان سوفت ترخيصاً شخصياً، غير حصري، وغير قابل للتحويل لتثبيت واستخدام التطبيقات المتاحة (مثل تطبيق كيان PDF) على أجهزتك المتوافقة للأغراض الشخصية أو المهنية المعتادة وفق ضوابط الاستخدام المشروع.'
-              : 'Kayan Soft grants you a personal, non-exclusive, non-transferable license to install and use the provided software (such as Kayan PDF) on your compatible devices for legitimate personal and professional document processing.'}
+              ? 'تمنحك كيان سوفت ترخيصاً شخصياً، غير حصري، لاستخدام التطبيقات والمنتجات الرقمية المتاحة (مثل قوالب التصميم، الأدوات البرمجية، أو تطبيق كيان PDF) على أجهزتك المتوافقة. المنتجات الرقمية المشتراة مخصصة للاستخدام الفردي ويمنع إعادة توزيعها أو بيعها دون إذن خطي.'
+              : 'Kayan Soft grants you a personal, non-exclusive license to use the provided software and digital products (such as templates, tools, or Kayan PDF) on your compatible devices. Digital assets are for individual use; unauthorized redistribution or resale is prohibited.'}
           </p>
         </section>
 

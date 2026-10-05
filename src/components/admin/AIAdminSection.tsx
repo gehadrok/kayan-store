@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext.tsx';
-import {
-  Brain, Cpu, Zap, Activity, Settings2, Shield,
-  RefreshCw, Plus, Edit3, Trash2, CheckCircle2,
-  AlertTriangle, XCircle, BarChart3, Key,
+import { 
+  Brain, Cpu, Zap, Activity, Settings2, Shield, 
+  RefreshCw, Plus, Edit3, Trash2, CheckCircle2, 
+  AlertTriangle, XCircle, BarChart3, Key, 
   ExternalLink, Check, X, ShieldAlert, Layers
 } from 'lucide-react';
 import { AIProviderConfig, AIModelConfig, AISettings, AIUsageStats } from '../../types.ts';
@@ -16,13 +16,13 @@ interface AIAdminSectionProps {
 export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
   const { lang, dir } = useLanguage();
   const [activeSubTab, setActiveTab] = useState<'providers' | 'models' | 'routing' | 'usage' | 'keys'>('providers');
-
+  
   const [providers, setProviders] = useState<any[]>([]);
   const [models, setModels] = useState<AIModelConfig[]>([]);
   const [settings, setSettings] = useState<AISettings | null>(null);
   const [usageStats, setUsageStats] = useState<AIUsageStats[]>([]);
   const [userKeys, setUserKeys] = useState<any[]>([]);
-
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
     setLoading(true);
     setError(null);
     const headers = { 'Authorization': `Bearer ${token}` };
-
+    
     try {
       if (activeSubTab === 'providers') {
         const res = await fetch('/api/admin/ai/providers', { headers });
@@ -126,7 +126,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
             <p className="text-xs text-slate-500">إدارة مزودي الذكاء الاصطناعي وسياسات التوجيه والتعافي</p>
           </div>
         </div>
-
+        
         <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
           {[
             { id: 'providers', label: 'المزودين', icon: Cpu },
@@ -139,8 +139,8 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                activeSubTab === tab.id
-                ? 'bg-slate-900 text-white shadow-sm'
+                activeSubTab === tab.id 
+                ? 'bg-slate-900 text-white shadow-sm' 
                 : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -179,7 +179,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                         <div className="flex items-center gap-2">
                            <h4 className="font-bold text-slate-900">{p.displayName}</h4>
                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                             p.adapterStatus === 'LIVE' ? 'bg-emerald-50 text-emerald-700' :
+                             p.adapterStatus === 'LIVE' ? 'bg-emerald-50 text-emerald-700' : 
                              p.adapterStatus === 'STUB' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
                            }`}>
                              {p.adapterStatus}
@@ -188,7 +188,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                         <p className="text-[10px] text-slate-500 font-mono">Type: {p.type} | ID: {p.id}</p>
                       </div>
                     </div>
-
+                    
                     <div className="flex items-center gap-2">
                       <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                         p.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
@@ -196,20 +196,20 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                         {p.status === 'active' ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                         <span>{p.status === 'active' ? 'مفعل' : 'معطل'}</span>
                       </div>
-
-                      <button
+                      
+                      <button 
                         onClick={() => testProvider(p.id)}
                         className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                         title="فحص الاتصال"
                       >
                         <Activity className="h-4 w-4" />
                       </button>
-
-                      <button
+                      
+                      <button 
                         onClick={() => handleToggleProvider(p.id, p.status)}
                         className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
-                          p.status === 'active'
-                          ? 'border-amber-200 text-amber-700 hover:bg-amber-50'
+                          p.status === 'active' 
+                          ? 'border-amber-200 text-amber-700 hover:bg-amber-50' 
                           : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                         }`}
                       >
@@ -218,7 +218,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                     </div>
                  </div>
                ))}
-
+               
                <button className="border-2 border-dashed border-slate-200 rounded-2xl p-4 flex items-center justify-center gap-2 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group">
                  <Plus className="h-5 w-5 group-hover:scale-110 transition-transform" />
                  <span className="text-sm font-bold">إضافة مزود ذكاء اصطناعي مخصص</span>
@@ -271,7 +271,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <button
+                          <button 
                             onClick={() => handleToggleModel(m.id, m.active)}
                             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all"
                           >
@@ -302,11 +302,11 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                   <Layers className="h-4 w-4 text-indigo-600" />
                   سياسات التوجيه والتعافي العالمية
                 </h3>
-
+                
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-700">وضع التوجيه التلقائي</label>
-                    <select
+                    <select 
                       value={settings.routingMode}
                       onChange={(e) => setSettings({...settings, routingMode: e.target.value as any})}
                       className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
@@ -317,18 +317,18 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                       <option value="PROVIDER_SELECTED">PROVIDER_SELECTED (تفضيل المزود)</option>
                     </select>
                   </div>
-
+                  
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-700">الحد الأقصى لمحاولات التعافي</label>
-                    <input
-                      type="number"
+                    <input 
+                      type="number" 
                       min="1" max="5"
                       value={settings.maxRetryAttempts}
                       onChange={(e) => setSettings({...settings, maxRetryAttempts: parseInt(e.target.value)})}
                       className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
                     />
                   </div>
-
+                  
                   <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 col-span-full">
                     <div className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${settings.allowPaidFallback ? 'bg-indigo-600' : 'bg-slate-300'}`}
                          onClick={() => setSettings({...settings, allowPaidFallback: !settings.allowPaidFallback})}>
@@ -340,9 +340,9 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                     </div>
                   </div>
                 </div>
-
+                
                 <div className="mt-8 flex justify-end">
-                   <button
+                   <button 
                     onClick={async () => {
                       const res = await fetch('/api/admin/ai/settings', {
                         method: 'PATCH',
@@ -388,7 +388,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                     </div>
                   </div>
                </div>
-
+               
                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                   <table className="w-full text-start">
                     <thead className="bg-slate-50 border-b border-slate-200">
@@ -428,7 +428,7 @@ export const AIAdminSection: React.FC<AIAdminSectionProps> = ({ token }) => {
                    <p className="text-[10px]">لا يمكن للمسؤولين رؤية مفاتيح API الخاصة بالمستخدمين. يتم عرض البصمة الزمنية والحالة فقط.</p>
                  </div>
               </div>
-
+              
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-start">
                    <thead className="bg-slate-50 border-b border-slate-200">

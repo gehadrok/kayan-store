@@ -21,11 +21,11 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onSelect, onDownloadClick
 
   return (
     <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-sky-300 hover:shadow-md text-start">
-
+      
       {/* Top row: Icon + Names & Category */}
       <div>
         <div className="flex items-start gap-4">
-          <div
+          <div 
             onClick={() => onSelect(app.slug)}
             className="flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-slate-50 p-2.5 border border-slate-100 transition-transform group-hover:scale-105"
           >
@@ -50,7 +50,7 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onSelect, onDownloadClick
               </span>
             </div>
 
-            <h3
+            <h3 
               onClick={() => onSelect(app.slug)}
               className="cursor-pointer text-base font-bold text-slate-900 group-hover:text-sky-600 transition-colors truncate"
             >

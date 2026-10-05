@@ -252,7 +252,7 @@ export const AppBuilderPage: React.FC<AppBuilderPageProps> = ({ onNavigate }) =>
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-
+        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
           <div>
@@ -288,7 +288,7 @@ export const AppBuilderPage: React.FC<AppBuilderPageProps> = ({ onNavigate }) =>
 
         {/* Project Selector / Creator Bar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
+          
           {/* Idea Input / Generator Form */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
             <div>
@@ -369,7 +369,7 @@ export const AppBuilderPage: React.FC<AppBuilderPageProps> = ({ onNavigate }) =>
           <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col">
             {currentProject ? (
               <div className="flex-1 flex flex-col space-y-6">
-
+                
                 {/* Project Header & Pipeline Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl">
                   <div>
@@ -457,7 +457,7 @@ export const AppBuilderPage: React.FC<AppBuilderPageProps> = ({ onNavigate }) =>
 
                 {/* Tab Content */}
                 <div className="flex-1 overflow-y-auto max-h-[550px] space-y-6 pr-2">
-
+                  
                   {/* Specification Tab */}
                   {activeTab === 'spec' && (
                     <div className="space-y-6">

@@ -9,6 +9,10 @@ export const KAYAN_PDF_BANNER = '/assets/images/kayan_pdf_feature_banner.jpg';
 export const KAYAN_STORE_LOGO = '/assets/images/kayan_store_logo.jpg';
 export const KAYAN_STORE_HERO = '/assets/images/kayan_store_hero_tech.jpg';
 
+export const KAYAN_PLATFORM_LOGO = '/assets/images/kayan_platform_logo.jpg';
+export const KAYAN_NEWS_LOGO = '/assets/images/kayan_news_logo.jpg';
+export const KAYAN_AI_LOGO = '/assets/images/kayan_ai_logo.jpg';
+
 /**
  * Normalizes any asset URL (including legacy database records or Vite dev URLs)
  * into a production-safe public URL.
@@ -19,6 +23,21 @@ export function getSafeAssetUrl(url: string | null | undefined, fallback: string
   }
 
   const trimmed = url.trim();
+
+  // Handle Kayan Platform logo
+  if (trimmed.includes('kayan_platform_logo')) {
+    return KAYAN_PLATFORM_LOGO;
+  }
+
+  // Handle Kayan News logo
+  if (trimmed.includes('kayan_news_logo')) {
+    return KAYAN_NEWS_LOGO;
+  }
+
+  // Handle Kayan AI logo
+  if (trimmed.includes('kayan_ai_logo')) {
+    return KAYAN_AI_LOGO;
+  }
 
   // Handle Kayan PDF icon
   if (trimmed.includes('kayan_pdf_icon')) {
